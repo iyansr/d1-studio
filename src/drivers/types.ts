@@ -1,0 +1,53 @@
+import type { Cell, ParamValue } from "../shared/values";
+
+export interface Stmt {
+  sql: string;
+  params?: ParamValue[];
+}
+
+export interface QueryResult {
+  columns: string[];
+  rows: Cell[][];
+  changes?: number;
+  lastRowId?: Cell;
+  durationMs: number;
+}
+
+/**
+ * One database, local or remote. Drivers implement only `query` and `batch`;
+ * introspection is shared (see `introspect.ts`).
+ */
+export interface Driver {
+  readonly mode: "local" | "remote";
+  readonly readOnly: boolean;
+  /** Runs each statement in `sql` in order; one result per statement. */
+  query(sql: string, params?: ParamValue[]): Promise<QueryResult[]>;
+  /** Runs single statements in one transaction; all or nothing. */
+  batch(stmts: Stmt[]): Promise<QueryResult[]>;
+  close(): Promise<void>;
+}
+
+/**
+ * An error from the database engine. `message` is the engine's text, shown
+ * to the user verbatim (UI-8).
+ */
+export class DbError extends Error {
+  override name = "DbError";
+  constructor(
+    message: string,
+    readonly statementIndex?: number,
+  ) {
+    super(message);
+  }
+}
+
+/** A batch statement failed; nothing was committed. */
+export class BatchError extends DbError {
+  override name = "BatchError";
+  constructor(
+    readonly index: number,
+    message: string,
+  ) {
+    super(message, index);
+  }
+}
