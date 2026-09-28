@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { UnknownIdentifierError } from "../drivers/introspect";
 import { DbError } from "../drivers/types";
+import { RowsQueryError } from "../sql/rows-query";
 import type { AppContext } from "./context";
 import type { ApiErrorBody } from "./errors";
 import { candidateRoutes } from "./routes/candidates";
@@ -33,6 +34,7 @@ export function createApp(ctx: AppContext) {
       if (err.statementIndex !== undefined) error.statementIndex = err.statementIndex;
       return c.json({ error }, 400);
     }
+    if (err instanceof RowsQueryError) return c.json({ error: { message: err.message } }, 400);
     if (err instanceof UnknownIdentifierError) {
       return c.json({ error: { message: err.message } }, err.kind === "table" ? 404 : 400);
     }

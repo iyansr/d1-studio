@@ -238,6 +238,43 @@ export async function describe(query: QueryFn, table: TableInfo): Promise<TableS
   };
 }
 
+/** A table or view with its column names and types, for editor autocomplete. */
+export interface SchemaTable {
+  name: string;
+  type: TableInfo["type"];
+  columns: { name: string; type: string }[];
+}
+
+/**
+ * Every table and view with its columns. One query through
+ * `pragma_table_info()`; if that fails (a broken view, or no table-valued
+ * pragmas), one `table_info` per table.
+ */
+export async function allColumns(query: QueryFn, tables: TableInfo[]): Promise<SchemaTable[]> {
+  const byName = new Map<string, SchemaTable>(
+    tables.map((t) => [t.name, { name: t.name, type: t.type, columns: [] }]),
+  );
+  try {
+    const [result] = await query(
+      "SELECT m.name, p.name, p.type FROM sqlite_schema m JOIN pragma_table_info(m.name) p" +
+        " WHERE m.type IN ('table', 'view') ORDER BY m.name, p.cid",
+    );
+    for (const [table, name, type] of result?.rows ?? []) {
+      byName.get(String(table))?.columns.push({ name: String(name), type: str(type) ?? "" });
+    }
+  } catch {
+    for (const t of byName.values()) {
+      try {
+        const [result] = await query(`PRAGMA table_info(${quoteIdent(t.name)})`);
+        t.columns = objects(result).map((r) => ({ name: String(r.name), type: str(r.type) ?? "" }));
+      } catch {
+        t.columns = [];
+      }
+    }
+  }
+  return [...byName.values()];
+}
+
 /** A table or column name that isn't in the schema. */
 export class UnknownIdentifierError extends Error {
   override name = "UnknownIdentifierError";
@@ -255,6 +292,7 @@ export class UnknownIdentifierError extends Error {
  */
 export class SchemaCache {
   private tablesPromise?: Promise<TableInfo[]>;
+  private allPromise?: Promise<SchemaTable[]>;
   private schemas = new Map<string, Promise<TableSchema>>();
 
   constructor(private readonly query: QueryFn) {}
@@ -265,6 +303,17 @@ export class SchemaCache {
       throw err;
     });
     return this.tablesPromise;
+  }
+
+  /** Every table and view with its columns (editor autocomplete). */
+  all(): Promise<SchemaTable[]> {
+    this.allPromise ??= this.tables()
+      .then((tables) => allColumns(this.query, tables))
+      .catch((err) => {
+        this.allPromise = undefined;
+        throw err;
+      });
+    return this.allPromise;
   }
 
   async assertTable(name: string): Promise<TableInfo> {
@@ -296,6 +345,7 @@ export class SchemaCache {
 
   invalidate(): void {
     this.tablesPromise = undefined;
+    this.allPromise = undefined;
     this.schemas.clear();
   }
 }
