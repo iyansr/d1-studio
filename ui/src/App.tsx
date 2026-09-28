@@ -48,7 +48,7 @@ export function App() {
       />
     );
   }
-  if (meta.data.state === "needs-db") return <DbPicker />;
+  if (meta.data.state === "needs-db") return <DbPicker meta={meta.data} />;
   return <Studio meta={meta.data} />;
 }
 

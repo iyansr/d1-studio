@@ -1,6 +1,7 @@
 import { isHiddenTable } from "../shared/tables";
 import type { Cell, ParamValue } from "../shared/values";
 import { quoteIdent, quoteString } from "../sql/ident";
+import { isKeyword, tokenize } from "../sql/tokenize";
 import type { QueryResult } from "./types";
 
 /** Introspection runs over `Driver.query`, so both drivers share it (D5). */
@@ -36,6 +37,10 @@ export interface IndexInfo {
   partial: boolean;
   /** Key columns; `null` for an expression or the rowid. */
   columns: (string | null)[];
+  /** Per key column: sorted descending. */
+  desc: boolean[];
+  /** A partial index's `WHERE` expression. */
+  where: string | null;
   sql: string | null;
 }
 
@@ -188,16 +193,20 @@ export async function describe(query: QueryFn, table: TableInfo): Promise<TableS
   const indexes: IndexInfo[] = indexRows
     .map((r, i) => {
       const name = String(r.name);
+      const keys = objects(indexColumns[i])
+        .filter((c) => num(c.key) === 1)
+        .sort((a, b) => num(a.seqno) - num(b.seqno));
+      const sql = sqlOf("index", name);
+      const partial = num(r.partial) === 1;
       return {
         name,
         unique: num(r.unique) === 1,
         origin: String(r.origin),
-        partial: num(r.partial) === 1,
-        columns: objects(indexColumns[i])
-          .filter((c) => num(c.key) === 1)
-          .sort((a, b) => num(a.seqno) - num(b.seqno))
-          .map((c) => str(c.name)),
-        sql: sqlOf("index", name),
+        partial,
+        columns: keys.map((c) => str(c.name)),
+        desc: keys.map((c) => num(c.desc) === 1),
+        where: partial && sql ? partialWhere(sql) : null,
+        sql,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -236,6 +245,12 @@ export async function describe(query: QueryFn, table: TableInfo): Promise<TableS
     foreignKeys: [...fks.values()],
     sql: sqlOf(table.type === "view" ? "view" : "table", table.name),
   };
+}
+
+/** The expression after a `CREATE INDEX`'s top-level `WHERE`. */
+export function partialWhere(sql: string): string | null {
+  const where = tokenize(sql).find((t) => t.depth === 0 && isKeyword(t, "WHERE"));
+  return where ? sql.slice(where.end).trim().replace(/;$/, "").trim() || null : null;
 }
 
 /** A table or view with its column names and types, for editor autocomplete. */

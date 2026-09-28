@@ -20,6 +20,7 @@ export const shadcnTheme = [
     },
     ".cm-scroller": {
       fontFamily: "var(--font-mono, ui-monospace, monospace)",
+      fontVariantLigatures: "none",
       lineHeight: "1.55",
     },
     ".cm-content": { caretColor: "var(--foreground)", padding: "8px 0" },

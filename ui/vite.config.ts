@@ -19,6 +19,8 @@ export default defineConfig({
     // Served by the CLI (01-T8).
     outDir: path.resolve(import.meta.dirname, "../dist/ui"),
     emptyOutDir: true,
+    // No data: URIs: the CSP only allows fonts from 'self' (01-T8).
+    assetsInlineLimit: 0,
     chunkSizeWarningLimit: 1200,
   },
   server: {

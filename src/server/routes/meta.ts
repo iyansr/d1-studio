@@ -10,6 +10,8 @@ export function metaRoutes(ctx: AppContext) {
       database: session.state === "ready" ? session.database : null,
       readOnly: ctx.readOnly,
       state: session.state,
+      /** needs-db: the binding no file matched. */
+      unmatched: session.state === "needs-db" ? (session.unmatched ?? null) : null,
       notices: ctx.notices,
     });
   });

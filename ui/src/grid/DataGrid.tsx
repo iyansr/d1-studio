@@ -130,7 +130,7 @@ function defaultWidth(col: GridColumn): number {
   ];
   // Name, type, key/link icons, the menu button and padding.
   const icons = (col.pk ? 20 : 0) + (col.fk ? 20 : 0);
-  const header = col.name.length * 8.5 + col.type.length * 7 + icons + 64;
+  const header = col.name.length * 8 + col.type.length * 7.3 + icons + 64;
   return Math.min(Math.max(byType, header), 360);
 }
 
@@ -445,7 +445,7 @@ export function DataGrid(props: DataGridProps) {
         aria-colcount={cols}
         onKeyDown={onKeyDown}
         style={{ width: table.getTotalSize(), tableLayout: "fixed" }}
-        className="border-separate border-spacing-0"
+        className="border-separate border-spacing-0 font-mono text-[13px]"
       >
         <TableHeader className="sticky top-0 z-10 bg-background [&_tr]:border-0">
           <TableRow role="row" aria-rowindex={1} className="hover:bg-transparent">
@@ -696,16 +696,14 @@ function GridCell(props: {
   const content =
     kind === "json" ? (
       <span className="flex min-w-0 items-center gap-1.5">
-        <Badge variant="outline" className="font-mono">
-          {text.trimStart().startsWith("[") ? "[]" : "{}"}
-        </Badge>
-        <span className="truncate font-mono text-xs">{text}</span>
+        <Badge variant="outline">{text.trimStart().startsWith("[") ? "[]" : "{}"}</Badge>
+        <span className="truncate">{text}</span>
       </span>
     ) : (
       text
     );
   // Only likely-truncated text gets a tooltip; they share one popup.
-  const truncated = text.length * 7 > props.width - 16 || text.includes("\n");
+  const truncated = text.length * 7.9 > props.width - 16 || text.includes("\n");
   if (!truncated) return <TableCell {...cellProps}>{content}</TableCell>;
   return (
     <TooltipTrigger

@@ -5,11 +5,15 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");
-const [dir = "test/fixtures/project-two-dbs", ...flags] = process.argv.slice(2);
-if (process.argv.length <= 2) flags.push("--db", "DB");
+const [dir = "e2e/fixtures/project", ...flags] = process.argv.slice(2);
 const port = process.env.D1_STUDIO_PORT ?? "4101";
 const env = { ...process.env, D1_STUDIO_DEV: "1", D1_STUDIO_PORT: port };
 const shell = process.platform === "win32";
+
+if (process.argv.length <= 2) {
+  const { e2eFixturesExist, makeE2eFixtures } = await import("../e2e/fixtures/make.ts");
+  if (!e2eFixturesExist()) makeE2eFixtures();
+}
 
 const cli = [
   `cd "${path.resolve(root, dir)}"`,

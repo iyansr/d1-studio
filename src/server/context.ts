@@ -11,7 +11,12 @@ export interface DatabaseMeta {
 
 export type Session =
   | { state: "ready"; driver: Driver; database: DatabaseMeta; schema: SchemaCache }
-  | { state: "needs-db"; candidates: CandidateFile[] };
+  | {
+      state: "needs-db";
+      candidates: CandidateFile[];
+      /** The binding no file matched, for the picker's heading. */
+      unmatched?: DatabaseMeta;
+    };
 
 export interface AppContext {
   version: string;

@@ -167,7 +167,7 @@ async function openLocal(options: CliOptions, readOnly: boolean): Promise<Opened
 
   const drivers: Driver[] = [];
   return {
-    session: { state: "needs-db", candidates: target.candidates },
+    session: { state: "needs-db", candidates: target.candidates, unmatched: database },
     database: `${label}: no file matched; pick one of ${target.candidates.length} in the studio`,
     source,
     drivers,

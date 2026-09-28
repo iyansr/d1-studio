@@ -17,19 +17,21 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "node scripts/dev.mjs",
+    "dev": "node --experimental-strip-types scripts/dev.mjs",
     "build": "pnpm build:ui && pnpm build:cli",
     "build:ui": "pnpm --filter ui build",
     "build:cli": "tsup",
     "test": "vitest run",
     "test:smoke": "vitest run --config vitest.smoke.config.ts",
-    "test:e2e": "pnpm test:smoke",
+    "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit && pnpm --filter ui typecheck",
     "lint": "biome check .",
     "format": "biome check --write .",
     "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "check:size": "node scripts/check-size.mjs",
     "fixtures": "node --experimental-strip-types test/fixtures/make.ts"
   },
+  "dependencies": {},
   "packageManager": "pnpm@12.4.2",
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

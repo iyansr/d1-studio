@@ -6,6 +6,7 @@ import {
   countRows,
   describe as describeTable,
   listTables,
+  partialWhere,
   type QueryFn,
   SchemaCache,
   UnknownIdentifierError,
@@ -150,6 +151,8 @@ describe("describe", () => {
         origin: "c",
         partial: true,
         columns: ["title"],
+        desc: [true],
+        where: "title IS NOT NULL",
         sql: "CREATE INDEX books_title_partial ON books (title DESC) WHERE title IS NOT NULL",
       },
       {
@@ -158,10 +161,23 @@ describe("describe", () => {
         origin: "pk",
         partial: false,
         columns: ["seq", "author_id"],
+        desc: [false, false],
+        where: null,
         sql: null,
       },
     ]);
     expect(schema.sql).toMatch(/^CREATE TABLE books/);
+  });
+
+  test.each([
+    ["CREATE INDEX i ON t (a) WHERE a > 0", "a > 0"],
+    [
+      "CREATE INDEX i ON t (coalesce(a, 'WHERE')) where (b IN (SELECT 1 WHERE 1));",
+      "(b IN (SELECT 1 WHERE 1))",
+    ],
+    ['CREATE INDEX "where" ON t ("where")', null],
+  ])("partialWhere(%j)", (sql, where) => {
+    expect(partialWhere(sql)).toBe(where);
   });
 
   test("WITHOUT ROWID table has no rowid", async () => {

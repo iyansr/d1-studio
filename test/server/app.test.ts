@@ -118,6 +118,7 @@ describe("auth", () => {
       database,
       readOnly: false,
       state: "ready",
+      unmatched: null,
       notices: [],
     });
   });
@@ -358,8 +359,9 @@ describe("needs-db state", () => {
   test("lists candidates without paths, then opens one", async () => {
     const candidates = await listCandidates(fixtureDir);
     const opened: string[] = [];
+    const unmatched = { name: "app-db", binding: "DB", id: "nope" };
     const ctx = makeCtx({
-      session: { state: "needs-db", candidates },
+      session: { state: "needs-db", candidates, unmatched },
       openCandidate: async (c) => {
         opened.push(c.path);
         return { driver, database: { name: c.fileName, binding: null, id: null } };
@@ -370,6 +372,7 @@ describe("needs-db state", () => {
     expect(await (await request(app, "/api/meta", authed())).json()).toMatchObject({
       state: "needs-db",
       database: null,
+      unmatched,
     });
     expect((await request(app, "/api/tables", authed())).status).toBe(409);
 

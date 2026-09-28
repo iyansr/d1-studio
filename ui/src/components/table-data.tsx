@@ -1,7 +1,14 @@
-import { PAGE_SIZES, type PageSize, ROWID_COLUMN } from "@shared/rows";
+import {
+  type Filter,
+  PAGE_SIZES,
+  type PageSize,
+  ROWID_COLUMN,
+  type RowsColumn,
+} from "@shared/rows";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeftIcon, ChevronRightIcon, EyeIcon, RefreshCwIcon, TableIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { FilterBadges, FilterBuilder } from "@/components/filter-builder";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +34,14 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
   // Totals per filter set, so paging doesn't recount.
   const [totals, setTotals] = useState<Record<string, number>>({});
   const [counting, setCounting] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterSeed, setFilterSeed] = useState<string | null>(null);
+  const schema = useQuery(queries.schema(table));
+  const filterColumns = useMemo<RowsColumn[]>(
+    () => schema.data?.columns.map((c) => ({ name: c.name, type: c.type, pk: c.pk })) ?? [],
+    [schema.data],
+  );
+  const setFilters = (filters: Filter[]) => setUrl({ filters, page: 0 });
 
   const filterKey = JSON.stringify(url.filters);
   const tables = useQuery(queries.tables());
@@ -66,6 +81,21 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-11 flex-wrap items-center gap-2 border-b px-3 py-1.5">
+        <FilterBuilder
+          columns={filterColumns}
+          filters={url.filters}
+          onApply={setFilters}
+          open={filterOpen}
+          seed={filterSeed}
+          onOpenChange={(open) => {
+            setFilterOpen(open);
+            if (!open) setFilterSeed(null);
+          }}
+        />
+        <FilterBadges
+          filters={url.filters}
+          onRemove={(i) => setFilters(url.filters.filter((_, j) => j !== i))}
+        />
         {hidden.length > 0 && (
           <Button variant="ghost" size="sm" onClick={() => setHidden([])}>
             <EyeIcon data-icon="inline-start" />
@@ -108,6 +138,11 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
           sort={url.sort}
           onSortChange={(sort) => setUrl({ sort, page: 0 })}
           onHideColumn={(name) => setHidden((h) => [...h, name])}
+          onFilterColumn={(name) => {
+            setFilterSeed(name);
+            setFilterOpen(true);
+          }}
+          onAddFilter={(filter) => setFilters([...url.filters, filter])}
           loading={rows.isPending}
           widthsKey={table}
           rowOffset={offset}
