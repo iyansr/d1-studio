@@ -17,6 +17,7 @@ import { displayPath } from "../paths";
 import { createApp } from "../server/app";
 import { type AppContext, type DatabaseMeta, readySession, type Session } from "../server/context";
 import { createToken, isLoopback } from "../server/security";
+import { WRANGLER_DEV_WRITES } from "../shared/notices";
 import { type CliOptions, parseCli, renderHelp } from "./args";
 import { type BannerInfo, formatBanner, formatDatabase, formatHostWarning } from "./banner";
 import { openBrowser } from "./browser";
@@ -57,6 +58,7 @@ export async function main(argv: string[]): Promise<void> {
     bind: { host: options.host, port },
     uiDir: fileURLToPath(new URL("./ui/", import.meta.url)),
     session: opened.session,
+    notices: readOnly ? [] : [WRANGLER_DEV_WRITES],
     openCandidate: opened.openCandidate,
   };
 
@@ -82,6 +84,9 @@ export async function main(argv: string[]): Promise<void> {
       source: opened.source,
       url,
       busyPort: ctx.bind.port !== port ? port : undefined,
+      notes: readOnly
+        ? []
+        : ["writes here can make concurrent `wrangler dev` writes fail (SQLITE_BUSY)"],
     }),
   );
   if (!isLoopback(options.host)) console.log(`\n${formatHostWarning(options.host, readOnly)}`);

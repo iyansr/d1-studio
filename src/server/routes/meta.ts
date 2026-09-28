@@ -10,6 +10,7 @@ export function metaRoutes(ctx: AppContext) {
       database: session.state === "ready" ? session.database : null,
       readOnly: ctx.readOnly,
       state: session.state,
+      notices: ctx.notices,
     });
   });
 }

@@ -142,6 +142,9 @@ describe(`smoke (${path.basename(runtime)})`, () => {
     expect(banner).toContain("mode      local (read-write)");
     expect(banner).toContain("database  app-db (binding DB, id 3f2a…)");
     expect(banner).toContain("config    ./wrangler.jsonc");
+    expect(banner).toContain(
+      "note      writes here can make concurrent `wrangler dev` writes fail",
+    );
     expect(s.url.searchParams.get("t")).toMatch(/^[\w-]{43}$/);
 
     const origin = `http://${s.url.host}`;
@@ -191,6 +194,7 @@ describe(`smoke (${path.basename(runtime)})`, () => {
   test("--no-write opens read-only", async () => {
     const s = await start(["--db", "ANALYTICS", "--no-write"], project);
     expect(s.stdout()).toContain("mode      local (read-only)");
+    expect(s.stdout()).not.toContain("wrangler dev");
     const cookie = await login(s.url);
     const res = await raw(new URL("/api/query", s.url), {
       method: "POST",

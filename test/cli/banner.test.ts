@@ -34,11 +34,12 @@ describe("banner", () => {
       source: { label: "file", value: "./data.sqlite" },
       url: "http://127.0.0.1:4102/?t=abc",
       busyPort: 4101,
+      notes: ["second note"],
     });
     expect(text).toContain("  mode      local (read-only)");
     expect(text).toContain("  database  data.sqlite\n");
     expect(text).toContain("  file      ./data.sqlite");
-    expect(text).toContain("  note      port 4101 was in use");
+    expect(text).toContain("  note      port 4101 was in use\n  note      second note");
   });
 
   test("host warning box", () => {

@@ -1,6 +1,7 @@
 import { SchemaCache } from "../drivers/introspect";
 import type { Driver } from "../drivers/types";
 import type { CandidateFile } from "../local/locate";
+import type { Notice } from "../shared/notices";
 
 export interface DatabaseMeta {
   name: string;
@@ -21,6 +22,7 @@ export interface AppContext {
   bind: { host: string; port: number };
   uiDir: string;
   session: Session;
+  notices: Notice[];
   /** Opens a candidate picked in the UI (needs-db state). */
   openCandidate?: (candidate: CandidateFile) => Promise<{ driver: Driver; database: DatabaseMeta }>;
   /** Where unexpected errors are logged; never sent to the browser. */

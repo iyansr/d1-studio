@@ -8,6 +8,7 @@ import { d1StateDir, listCandidates } from "../../src/local/locate";
 import { createApp } from "../../src/server/app";
 import { type AppContext, readySession } from "../../src/server/context";
 import { allowedHosts, isLoopback } from "../../src/server/security";
+import { WRANGLER_DEV_WRITES } from "../../src/shared/notices";
 import { DB_FILE } from "../fixtures/make";
 
 const TOKEN = "test-token-abc";
@@ -48,6 +49,7 @@ function makeCtx(overrides: Partial<AppContext> = {}): AppContext {
     bind: { host: "127.0.0.1", port: PORT },
     uiDir,
     session: readySession(driver, database),
+    notices: [],
     logError: () => {},
     ...overrides,
   };
@@ -116,7 +118,14 @@ describe("auth", () => {
       database,
       readOnly: false,
       state: "ready",
+      notices: [],
     });
+  });
+
+  test("meta carries notices for the UI", async () => {
+    const notices = [WRANGLER_DEV_WRITES];
+    const res = await request(createApp(makeCtx({ notices })), "/api/meta", authed());
+    expect(((await res.json()) as { notices: unknown }).notices).toEqual(notices);
   });
 });
 

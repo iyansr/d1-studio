@@ -11,6 +11,7 @@ export interface BannerInfo {
   url: string;
   /** The requested port, when a fallback port was used. */
   busyPort?: number;
+  notes?: string[];
 }
 
 const color = (format: Parameters<typeof styleText>[0], text: string) =>
@@ -26,9 +27,9 @@ export function formatBanner(info: BannerInfo): string {
   ];
   if (info.source) lines.push(row(info.source.label, info.source.value));
   lines.push(row("studio", color("cyan", info.url)));
-  if (info.busyPort !== undefined) {
-    lines.push(row("note", `port ${info.busyPort} was in use`));
-  }
+  const notes = [...(info.notes ?? [])];
+  if (info.busyPort !== undefined) notes.unshift(`port ${info.busyPort} was in use`);
+  for (const note of notes) lines.push(row("note", note));
   return lines.join("\n");
 }
 
