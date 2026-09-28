@@ -69,8 +69,10 @@ export const api = {
   tables: () => call(client.api.tables.$get()),
   schema: (name: string) => call(client.api.tables[":name"].schema.$get({ param: { name } })),
   schemaAll: () => call(client.api.schema.all.$get()),
-  rows: (name: string, q: RowsRequest, signal?: AbortSignal) =>
-    call(
+  rows: (name: string, q: RowsRequest, signal?: AbortSignal) => {
+    // T11 perf: request start; DataGrid marks the paint.
+    performance.mark("d1s:rows-request");
+    return call(
       client.api.tables[":name"].rows.$get(
         {
           param: { name },
@@ -84,7 +86,8 @@ export const api = {
         },
         { init: { signal } },
       ),
-    ) as Promise<RowsPage>,
+    ) as Promise<RowsPage>;
+  },
   query: (sql: string, params?: ParamValue[]) =>
     call(client.api.query.$post({ json: { sql, params } })),
   candidates: () => call(client.api.candidates.$get()),
