@@ -27,7 +27,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "check": "pnpm typecheck && pnpm lint && pnpm test"
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "fixtures": "node --experimental-strip-types test/fixtures/make.ts"
   },
   "dependencies": {},
   "devDependencies": {

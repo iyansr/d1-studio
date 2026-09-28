@@ -1,1 +1,5 @@
-export default function setup() {}
+import { makeFixtures } from "./fixtures/make";
+
+export default function setup() {
+  makeFixtures();
+}

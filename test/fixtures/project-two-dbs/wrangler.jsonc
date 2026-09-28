@@ -1,0 +1,17 @@
+{
+  "name": "two-dbs",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "app-db",
+      "database_id": "3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90"
+    },
+    {
+      "binding": "ANALYTICS",
+      "database_name": "analytics",
+      "database_id": "b81c0d44-2e6f-4a19-8d3b-0c5e7a9f1d22"
+    }
+  ]
+}
