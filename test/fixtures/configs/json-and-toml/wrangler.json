@@ -1,0 +1,1 @@
+{ "d1_databases": [{ "binding": "FROM_JSON", "database_id": "json-id" }] }

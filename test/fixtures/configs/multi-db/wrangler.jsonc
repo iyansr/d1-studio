@@ -1,0 +1,6 @@
+{
+  "d1_databases": [
+    { "binding": "DB", "database_name": "main-db", "database_id": "id-main" },
+    { "binding": "ANALYTICS", "database_name": "analytics", "database_id": "id-analytics" }
+  ]
+}

@@ -1,0 +1,13 @@
+[[d1_databases]]
+binding = "DB"
+database_name = "top-db"
+database_id = "top-id"
+
+[env.staging]
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "staging-db"
+database_id = "staging-id"
+
+[env.empty]
+name = "no-bindings-here"

@@ -1,7 +1,8 @@
 import { type ArgsDef, parseArgs, renderUsage } from "citty";
+import { UserError } from "../errors";
 
-/** A bad command line. The CLI prints the message and exits 1. */
-export class UsageError extends Error {
+/** A bad command line. */
+export class UsageError extends UserError {
   override name = "UsageError";
 }
 

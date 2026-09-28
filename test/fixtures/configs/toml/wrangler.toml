@@ -1,0 +1,8 @@
+name = "app"
+account_id = "acc-toml"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "toml-db"
+database_id = "b81c0d44-2e6f-4a19-8d3b-0c5e7a9f1d22"
+preview_database_id = "preview-1"
