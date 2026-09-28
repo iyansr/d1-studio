@@ -25,8 +25,9 @@ export function Studio({ meta }: { meta: Meta }) {
   const [url, setUrl] = useUrlState();
   const tables = useQuery(queries.tables());
 
-  // Open the first table, so there's data on screen right away.
-  const first = tables.data?.tables.find((t) => !t.hidden)?.name;
+  // Open the first table (or view), so there's data on screen right away.
+  const visible = tables.data?.tables.filter((t) => !t.hidden) ?? [];
+  const first = (visible.find((t) => t.type !== "view") ?? visible[0])?.name;
   useEffect(() => {
     if (url.table === null && first) setUrl({ table: first }, { replace: true });
   }, [url.table, first, setUrl]);
