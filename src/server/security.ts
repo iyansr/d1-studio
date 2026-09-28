@@ -55,6 +55,8 @@ export interface SecurityOptions {
   token: string;
   /** Read per request: the port is only known once the server is listening. */
   getBind: () => { host: string; port: number };
+  /** More `host:port` values to allow, e.g. the Vite dev server (`D1_STUDIO_DEV`). */
+  extraHosts?: string[];
 }
 
 const UNAUTHORIZED_HTML = `<!doctype html>
@@ -83,7 +85,11 @@ export function guard(options: SecurityOptions): MiddlewareHandler {
   let cached: { key: string; hosts: Set<string> } | undefined;
   const hostsFor = (host: string, port: number) => {
     const key = `${host}|${port}`;
-    if (cached?.key !== key) cached = { key, hosts: allowedHosts(host, port) };
+    if (cached?.key !== key) {
+      const hosts = allowedHosts(host, port);
+      for (const h of options.extraHosts ?? []) hosts.add(h.toLowerCase());
+      cached = { key, hosts };
+    }
     return cached.hosts;
   };
 

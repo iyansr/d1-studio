@@ -22,7 +22,7 @@ export function createApp(ctx: AppContext) {
 
   const app = new Hono();
   app.use(securityHeaders);
-  app.use(guard({ token: ctx.token, getBind: () => ctx.bind }));
+  app.use(guard({ token: ctx.token, getBind: () => ctx.bind, extraHosts: ctx.devHosts }));
   const routes = app.route("/api", api);
   app.all("/api/*", (c) => c.json({ error: { message: "Not found" } } satisfies ApiErrorBody, 404));
   app.get("*", serveUi(ctx.uiDir));

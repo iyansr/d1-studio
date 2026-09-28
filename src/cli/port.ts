@@ -26,10 +26,13 @@ export function resolvePort(input: {
   return { port: input.fallback ?? DEFAULT_PORT, strict: false };
 }
 
+/** `0` asks the OS for any free port (used by the e2e tests). */
 function parsePort(value: string, source: string): number {
   const port = /^\d+$/.test(value.trim()) ? Number(value.trim()) : Number.NaN;
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new UsageError(`${source} must be an integer from 1 to 65535 (got "${value}").`);
+  if (!Number.isInteger(port) || port < 0 || port > 65535) {
+    throw new UsageError(
+      `${source} must be an integer from 1 to 65535, or 0 for any free port (got "${value}").`,
+    );
   }
   return port;
 }
@@ -53,12 +56,13 @@ export async function listen(
   port: number,
   strict: boolean,
 ): Promise<Listening> {
-  const last = strict ? port : Math.min(port + FALLBACK_TRIES, 65535);
+  const last = strict || port === 0 ? port : Math.min(port + FALLBACK_TRIES, 65535);
   for (let candidate = port; candidate <= last; candidate++) {
     const server = createServer(getRequestListener(app.fetch));
     try {
       await bind(server, host, candidate);
-      return { server, port: candidate };
+      const address = server.address();
+      return { server, port: typeof address === "object" && address ? address.port : candidate };
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "EADDRINUSE") throw err;
     }

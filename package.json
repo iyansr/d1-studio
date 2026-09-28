@@ -17,24 +17,26 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "tsup --watch",
+    "dev": "node scripts/dev.mjs",
     "build": "pnpm build:ui && pnpm build:cli",
     "build:ui": "pnpm --filter ui build",
     "build:cli": "tsup",
     "test": "vitest run",
     "test:smoke": "vitest run --config vitest.smoke.config.ts",
     "test:e2e": "pnpm test:smoke",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && pnpm --filter ui typecheck",
     "lint": "biome check .",
     "format": "biome check --write .",
     "check": "pnpm typecheck && pnpm lint && pnpm test",
     "fixtures": "node --experimental-strip-types test/fixtures/make.ts"
   },
-  "dependencies": {},
+  "packageManager": "pnpm@12.4.2",
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@biomejs/biome": "^2.5.14",
     "@clack/prompts": "^1.8.1",
     "@hono/node-server": "^2.1.1",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^22.20.4",
     "citty": "^0.2.2",
     "hono": "^4.13.9",
@@ -43,6 +45,5 @@
     "tsup": "^8.5.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
-  },
-  "packageManager": "pnpm@12.4.2"
+  }
 }

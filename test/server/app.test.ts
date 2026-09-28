@@ -170,6 +170,22 @@ describe("host and origin", () => {
     expect(res.status).toBe(200);
   });
 
+  test("dev hosts (the Vite proxy) are allowed in Host and Origin", async () => {
+    const app = createApp(makeCtx({ devHosts: ["localhost:5173"] }));
+    const res = await request(
+      app,
+      "/api/query",
+      post({ sql: "SELECT 1" }, { Host: "localhost:5173", Origin: "http://localhost:5173" }),
+    );
+    expect(res.status).toBe(200);
+    const other = await request(
+      createApp(makeCtx()),
+      "/api/meta",
+      authed({ headers: { Host: "localhost:5173" } }),
+    );
+    expect(other.status).toBe(403);
+  });
+
   test("a cross-origin POST gets 403", async () => {
     const res = await request(
       createApp(makeCtx()),

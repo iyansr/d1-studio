@@ -14,7 +14,7 @@ describe("resolvePort", () => {
     expect(resolvePort({ env: "" })).toEqual({ port: 4101, strict: false });
   });
 
-  test.each(["0", "65536", "-1", "abc", "12.5", "0x10", "1e3", ""])("rejects --port %j", (flag) => {
+  test.each(["65536", "-1", "abc", "12.5", "0x10", "1e3", ""])("rejects --port %j", (flag) => {
     expect(() => resolvePort({ flag })).toThrow(UsageError);
   });
 
@@ -22,7 +22,8 @@ describe("resolvePort", () => {
     expect(() => resolvePort({ env: "nope" })).toThrow(/D1_STUDIO_PORT must be an integer/);
   });
 
-  test("accepts the range bounds", () => {
+  test("accepts the range bounds, and 0 for any free port", () => {
+    expect(resolvePort({ flag: "0" }).port).toBe(0);
     expect(resolvePort({ flag: "1" }).port).toBe(1);
     expect(resolvePort({ flag: "65535" }).port).toBe(65535);
   });
@@ -43,6 +44,14 @@ describe("listen", () => {
     if (!address || typeof address === "string") throw new Error("no port");
     return address.port;
   };
+
+  test("port 0 binds a free port chosen by the OS", async () => {
+    const { server, port } = await listen(app, "127.0.0.1", 0, true);
+    servers.push(server);
+    expect(port).toBeGreaterThan(0);
+    const res = await fetch(`http://127.0.0.1:${port}/`);
+    expect(await res.text()).toBe("ok");
+  });
 
   test("binds the requested port when free", async () => {
     const busy = await occupy();

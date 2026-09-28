@@ -23,6 +23,9 @@ import { type BannerInfo, formatBanner, formatDatabase, formatHostWarning } from
 import { openBrowser } from "./browser";
 import { listen, resolvePort } from "./port";
 
+/** ui/vite.config.ts */
+const VITE_PORT = 5173;
+
 interface Opened {
   session: Session;
   database: string;
@@ -50,6 +53,8 @@ export async function main(argv: string[]): Promise<void> {
 
   const readOnly = !options.write;
   const opened = await openLocal(options, readOnly);
+  // `pnpm dev`: the UI is served by Vite, which proxies /api here.
+  const dev = process.env.D1_STUDIO_DEV === "1";
   const ctx: AppContext = {
     version: __VERSION__,
     mode: "local",
@@ -57,6 +62,7 @@ export async function main(argv: string[]): Promise<void> {
     token: createToken(),
     bind: { host: options.host, port },
     uiDir: fileURLToPath(new URL("./ui/", import.meta.url)),
+    devHosts: dev ? [`localhost:${VITE_PORT}`, `127.0.0.1:${VITE_PORT}`] : undefined,
     session: opened.session,
     notices: readOnly ? [] : [WRANGLER_DEV_WRITES],
     openCandidate: opened.openCandidate,
@@ -83,7 +89,8 @@ export async function main(argv: string[]): Promise<void> {
       database: opened.database,
       source: opened.source,
       url,
-      busyPort: ctx.bind.port !== port ? port : undefined,
+      devUrl: dev ? `http://localhost:${VITE_PORT}/?t=${ctx.token}` : undefined,
+      busyPort: port !== 0 && ctx.bind.port !== port ? port : undefined,
       notes: readOnly
         ? []
         : ["writes here can make concurrent `wrangler dev` writes fail (SQLITE_BUSY)"],

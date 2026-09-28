@@ -9,6 +9,8 @@ export interface BannerInfo {
   /** `config` (or `file`) line. */
   source?: { label: "config" | "file"; value: string };
   url: string;
+  /** The Vite dev server's token URL (`D1_STUDIO_DEV=1`). */
+  devUrl?: string;
   /** The requested port, when a fallback port was used. */
   busyPort?: number;
   notes?: string[];
@@ -27,6 +29,7 @@ export function formatBanner(info: BannerInfo): string {
   ];
   if (info.source) lines.push(row(info.source.label, info.source.value));
   lines.push(row("studio", color("cyan", info.url)));
+  if (info.devUrl) lines.push(row("dev", color("cyan", info.devUrl)));
   const notes = [...(info.notes ?? [])];
   if (info.busyPort !== undefined) notes.unshift(`port ${info.busyPort} was in use`);
   for (const note of notes) lines.push(row("note", note));

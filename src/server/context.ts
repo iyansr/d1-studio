@@ -21,6 +21,8 @@ export interface AppContext {
   /** The bind address and port. `port` is updated once the server is listening. */
   bind: { host: string; port: number };
   uiDir: string;
+  /** Extra `host:port` values allowed in `Host` and `Origin` (the Vite dev server). */
+  devHosts?: string[];
   session: Session;
   notices: Notice[];
   /** Opens a candidate picked in the UI (needs-db state). */
