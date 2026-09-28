@@ -63,7 +63,7 @@ async function openNode(path: string, readOnly: boolean): Promise<SqliteConn> {
 async function openBun(path: string, readOnly: boolean): Promise<SqliteConn> {
   const { Database } = await import("bun:sqlite");
   const db = readOnly
-    ? new Database(path, { readonly: true, safeIntegers: true })
+    ? openBunReadOnly(Database, path)
     : new Database(path, { readwrite: true, create: false, safeIntegers: true });
   return {
     prepare(sql) {
@@ -82,6 +82,40 @@ async function openBun(path: string, readOnly: boolean): Promise<SqliteConn> {
     },
     close: () => db.close(),
   };
+}
+
+type BunDatabase = typeof import("bun:sqlite").Database;
+const PROBE = "SELECT 1 FROM sqlite_schema LIMIT 1";
+
+/**
+ * bun:sqlite can't read a WAL database read-only while its `-wal`/`-shm`
+ * files are missing (SQLITE_CANTOPEN), which happens after a clean close. A
+ * short-lived read-write handle creates them; the read-only handle opens and
+ * maps them before that handle closes, so they stay.
+ */
+function openBunReadOnly(Database: BunDatabase, path: string) {
+  const openProbed = () => {
+    const ro = new Database(path, { readonly: true, safeIntegers: true });
+    try {
+      ro.prepare(PROBE).values();
+      return ro;
+    } catch (err) {
+      ro.close();
+      throw err;
+    }
+  };
+  try {
+    return openProbed();
+  } catch (err) {
+    if ((err as { code?: string }).code !== "SQLITE_CANTOPEN") throw err;
+  }
+  const rw = new Database(path, { readwrite: true, create: false });
+  try {
+    rw.prepare(PROBE).values();
+    return openProbed();
+  } finally {
+    rw.close();
+  }
 }
 
 let warningFilterInstalled = false;

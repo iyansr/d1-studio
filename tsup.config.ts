@@ -13,8 +13,12 @@ export default defineConfig({
   clean: false,
   splitting: false,
   sourcemap: false,
-  noExternal: [/.*/],
+  // Bundle every dependency (D7) except the runtime SQLite modules; tsup's
+  // noExternal wins over external, so exclude them here.
+  noExternal: [/^(?!(?:node|bun):sqlite$)/],
   external: ["node:sqlite", "bun:sqlite"],
+  // `node:sqlite` has no bare `sqlite` alias.
+  removeNodeProtocol: false,
   banner: { js: "#!/usr/bin/env node" },
   define: { __VERSION__: JSON.stringify(pkg.version) },
   esbuildOptions(options) {
