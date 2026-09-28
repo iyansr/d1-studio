@@ -7,7 +7,16 @@ import type { D1Binding, WranglerConfig } from "./parse";
  * inherit `d1_databases` into environments, so neither do we.
  */
 export function selectBindings(cfg: WranglerConfig, env?: string): D1Binding[] {
-  if (env === undefined) return cfg.d1;
+  if (env === undefined) {
+    const withD1 = Object.keys(cfg.envs).filter((name) => cfg.envs[name]?.d1.length);
+    if (cfg.d1.length === 0 && withD1.length > 0) {
+      throw new UserError(
+        `No top-level d1_databases in ${displayPath(cfg.path)}. ` +
+          `These environments have D1: ${withD1.join(", ")}. Pass --env <name>.`,
+      );
+    }
+    return cfg.d1;
+  }
   const found = cfg.envs[env];
   if (!found) {
     const names = Object.keys(cfg.envs);

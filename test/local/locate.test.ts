@@ -150,6 +150,9 @@ describe("resolveLocalTarget", () => {
     await expect(resolveLocalTarget({ binding: "DB" }, dir)).rejects.toThrow(
       "Run `wrangler dev` or `wrangler d1 migrations apply --local` first.",
     );
+    await expect(resolveLocalTarget({ binding: "DB" }, dir)).rejects.toThrow(
+      "pass the same --persist-to here",
+    );
   });
 });
 

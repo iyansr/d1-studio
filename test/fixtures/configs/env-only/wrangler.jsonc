@@ -1,0 +1,9 @@
+{
+  // D1 only under environments, like a project that runs `wrangler dev --env local`.
+  "name": "env-only",
+  "env": {
+    "local": { "d1_databases": [{ "binding": "DB", "database_id": "local-db-id" }] },
+    "prod": { "d1_databases": [{ "binding": "DB", "database_id": "prod-id" }] },
+    "preview": { "vars": { "X": "1" } }
+  }
+}

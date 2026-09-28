@@ -170,6 +170,15 @@ describe("selectBindings", () => {
     expect(selectBindings(cfg, "empty")).toEqual([]);
   });
 
+  test("without --env, env-only bindings name the environments that have D1", () => {
+    const envOnly = parseConfig(fx("env-only", "wrangler.jsonc"));
+    expect(() => selectBindings(envOnly)).toThrow(
+      /^No top-level d1_databases in .*wrangler\.jsonc\. These environments have D1: local, prod\. Pass --env <name>\.$/,
+    );
+    expect(selectBindings(envOnly, "local").map((b) => b.databaseId)).toEqual(["local-db-id"]);
+    expect(selectBindings(envOnly, "preview")).toEqual([]);
+  });
+
   test("unknown env lists the available ones", () => {
     expect(() => selectBindings(cfg, "prod")).toThrow(
       /Unknown environment "prod" in .*\. Available: staging, empty\./,

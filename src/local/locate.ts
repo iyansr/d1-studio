@@ -150,7 +150,10 @@ export async function resolveLocalTarget(binding: D1Binding, dir: string): Promi
   if (file) return { kind: "file", path: file };
   const candidates = await listCandidates(dir);
   if (candidates.length > 0) return { kind: "needs-db", candidates };
-  throw new UserError(`No local D1 database found in ${displayPath(dir)}.\n${NO_LOCAL_DB_HINT}`);
+  throw new UserError(
+    `No local D1 database found in ${displayPath(dir)}.\n${NO_LOCAL_DB_HINT}\n` +
+      "If your dev script passes --persist-to to Wrangler, pass the same --persist-to here.",
+  );
 }
 
 function isFile(file: string): boolean {
