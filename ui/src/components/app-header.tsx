@@ -28,10 +28,7 @@ export function AppHeader({ meta, table }: { meta: Meta; table: string | null })
       <nav aria-label="Location" className="flex min-w-0 items-center gap-1.5 text-sm">
         {db && (
           <Tooltip>
-            <TooltipTrigger
-              render={<span tabIndex={0} />}
-              className="truncate rounded-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
+            <TooltipTrigger className="truncate rounded-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
               {db.name}
             </TooltipTrigger>
             {details.length > 0 && (
