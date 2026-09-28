@@ -92,6 +92,11 @@
   --staged: oklch(0.5 0.11 75);
   --inserted: oklch(0.48 0.12 150);
   --deleted: oklch(0.52 0.19 25);
+  /* Syntax colours for the CodeMirror theme (editor/theme.ts). */
+  --code-keyword: oklch(0.48 0.2 290);
+  --code-string: oklch(0.48 0.12 150);
+  --code-number: oklch(0.5 0.15 45);
+  --code-comment: var(--muted-foreground);
 }
 
 .dark {
@@ -131,6 +136,10 @@
   --staged: oklch(0.82 0.13 80);
   --inserted: oklch(0.8 0.14 150);
   --deleted: oklch(0.72 0.17 22);
+  --code-keyword: oklch(0.78 0.13 290);
+  --code-string: oklch(0.8 0.13 150);
+  --code-number: oklch(0.8 0.12 60);
+  --code-comment: var(--muted-foreground);
 }
 
 /* Remote mode: every shadcn component picks up the accent through --primary and --ring. */
