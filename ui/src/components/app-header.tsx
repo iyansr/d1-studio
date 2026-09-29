@@ -1,18 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import { ChevronRightIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Meta } from "@/lib/api";
+import { type Meta, queries } from "@/lib/api";
+import { formatCount } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** Mode, database and access (UI-1). Remote gets the accent via data-mode (T1). */
 export function AppHeader({ meta, table }: { meta: Meta; table: string | null }) {
   const remote = meta.mode === "remote";
   const db = meta.database;
+  // Remote: the session's D1 usage, refreshed whenever the tooltip opens (T9).
+  const usage = useQuery({ ...queries.usage(), enabled: remote });
+  const read = usage.data?.usage?.rowsRead;
   const details = [
     db?.binding && `binding ${db.binding}`,
     db?.id && `id ${db.id.length > 8 ? `${db.id.slice(0, 8)}…` : db.id}`,
+    read !== undefined && `${formatCount(read)} ${read === 1 ? "row" : "rows"} read this session`,
   ].filter(Boolean);
 
   return (
@@ -27,7 +33,11 @@ export function AppHeader({ meta, table }: { meta: Meta; table: string | null })
       <Badge variant={remote ? "default" : "outline"}>{meta.mode}</Badge>
       <nav aria-label="Location" className="flex min-w-0 items-center gap-1.5 text-sm">
         {db && (
-          <Tooltip>
+          <Tooltip
+            onOpenChange={(open) => {
+              if (open && remote) void usage.refetch();
+            }}
+          >
             <TooltipTrigger className="truncate rounded-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
               {db.name}
             </TooltipTrigger>

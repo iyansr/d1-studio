@@ -40,6 +40,7 @@ export function Studio({ meta }: { meta: Meta }) {
     <SidebarProvider className="h-svh">
       <AppSidebar
         tables={tables}
+        remote={meta.mode === "remote"}
         active={table}
         onOpen={(name) => setUrl({ table: name, page: 0, sort: [], filters: [] })}
       />

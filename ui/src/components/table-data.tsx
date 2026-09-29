@@ -8,8 +8,8 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeftIcon, ChevronRightIcon, EyeIcon, RefreshCwIcon, TableIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { ErrorAlert } from "@/components/error-alert";
 import { FilterBadges, FilterBuilder } from "@/components/filter-builder";
-import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -45,7 +45,10 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
 
   const filterKey = JSON.stringify(url.filters);
   const tables = useQuery(queries.tables());
-  const listed = tables.data?.tables.find((t) => t.name === table)?.rows;
+  // Remote counts come from the sidebar's lazy count; never fetched from here.
+  const counts = useQuery({ ...queries.tableCounts(), enabled: false });
+  const listed =
+    tables.data?.tables.find((t) => t.name === table)?.rows ?? counts.data?.counts[table];
   const knownTotal =
     url.filters.length === 0 && typeof listed === "number" ? listed : totals[filterKey];
 
@@ -115,19 +118,19 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
 
       {rows.isError ? (
         <div className="p-4">
-          <Alert variant="destructive">
-            <AlertTitle>Couldn't load rows</AlertTitle>
-            <AlertDescription className="font-mono">{rows.error.message}</AlertDescription>
-            <AlertAction>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setUrl({ sort: [], filters: [], page: 0 })}
-              >
-                Reset view
-              </Button>
-            </AlertAction>
-          </Alert>
+          <ErrorAlert
+            title="Couldn't load rows"
+            error={rows.error}
+            onRetry={() => void rows.refetch()}
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setUrl({ sort: [], filters: [], page: 0 })}
+            >
+              Reset view
+            </Button>
+          </ErrorAlert>
         </div>
       ) : (
         <DataGrid

@@ -1,7 +1,7 @@
-import type { UseQueryResult } from "@tanstack/react-query";
-import { DatabaseIcon, EyeIcon, SearchIcon, TableIcon } from "lucide-react";
+import { type UseQueryResult, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { DatabaseIcon, EyeIcon, RefreshCwIcon, SearchIcon, TableIcon } from "lucide-react";
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ErrorAlert } from "@/components/error-alert";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
@@ -11,6 +11,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -20,8 +21,10 @@ import {
   SidebarMenuItem,
   SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import type { api, TableEntry } from "@/lib/api";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { api, queries, type TableEntry } from "@/lib/api";
 import { formatCount } from "@/lib/format";
 import { readStored, writeStored } from "@/lib/storage";
 
@@ -30,10 +33,20 @@ type Tables = UseQueryResult<Awaited<ReturnType<typeof api.tables>>>;
 /** Tables and views with row counts, a name filter and the system-table toggle (UI-2). */
 export function AppSidebar(props: {
   tables: Tables;
+  /** Remote: counts load lazily, after the list (D9). */
+  remote: boolean;
   active: string | null;
   onOpen: (name: string) => void;
 }) {
-  const { tables, active, onOpen } = props;
+  const { tables, remote, active, onOpen } = props;
+  const client = useQueryClient();
+  const counts = useQuery({ ...queries.tableCounts(), enabled: remote && tables.isSuccess });
+  const recount = useMutation({
+    mutationFn: () => api.tableCounts(true),
+    onSuccess: (data) => client.setQueryData(queries.tableCounts().queryKey, data),
+  });
+  const countsPending = remote && (counts.isPending || recount.isPending);
+  const countOf = (t: TableEntry) => (remote ? counts.data?.counts[t.name] : t.rows);
   const [filter, setFilter] = useState("");
   const [showSystem, setShowSystem] = useState(() => readStored("show-system-tables", false));
   const [focused, setFocused] = useState<string | null>(null);
@@ -130,10 +143,11 @@ export function AppSidebar(props: {
           </SidebarGroup>
         ) : tables.isError ? (
           <SidebarGroup>
-            <Alert variant="destructive">
-              <AlertTitle>Couldn't list tables</AlertTitle>
-              <AlertDescription>{tables.error.message}</AlertDescription>
-            </Alert>
+            <ErrorAlert
+              title="Couldn't list tables"
+              error={tables.error}
+              onRetry={() => void tables.refetch()}
+            />
           </SidebarGroup>
         ) : names.length === 0 ? (
           <Empty className="p-4">
@@ -152,6 +166,14 @@ export function AppSidebar(props: {
               entries.length > 0 && (
                 <SidebarGroup key={label}>
                   <SidebarGroupLabel>{label}</SidebarGroupLabel>
+                  {remote && label === "Tables" && (
+                    <RecountButton
+                      pending={countsPending}
+                      rowsRead={(recount.data ?? counts.data)?.rowsRead}
+                      error={recount.error ?? counts.error}
+                      onClick={() => recount.mutate()}
+                    />
+                  )}
                   <SidebarGroupContent>
                     <SidebarMenu>
                       {entries.map((t) => (
@@ -168,9 +190,7 @@ export function AppSidebar(props: {
                             {t.type === "view" ? <EyeIcon /> : <TableIcon />}
                             <span>{t.name}</span>
                           </SidebarMenuButton>
-                          {typeof t.rows === "number" && (
-                            <SidebarMenuBadge>{formatCount(t.rows)}</SidebarMenuBadge>
-                          )}
+                          <RowCount count={countOf(t)} pending={countsPending && !t.hidden} />
                         </SidebarMenuItem>
                       ))}
                     </SidebarMenu>
@@ -194,6 +214,46 @@ export function AppSidebar(props: {
         </Field>
       </SidebarFooter>
     </Sidebar>
+  );
+}
+
+function RowCount({ count, pending }: { count: number | null | undefined; pending: boolean }) {
+  if (pending) {
+    return (
+      <SidebarMenuBadge>
+        <Skeleton className="h-3 w-6" />
+      </SidebarMenuBadge>
+    );
+  }
+  return typeof count === "number" ? (
+    <SidebarMenuBadge>{formatCount(count)}</SidebarMenuBadge>
+  ) : null;
+}
+
+/** ↻ for remote counts. The tooltip shows what the last count cost (D1 bills per row read). */
+function RecountButton(props: {
+  pending: boolean;
+  rowsRead: number | undefined;
+  error: Error | null;
+  onClick: () => void;
+}) {
+  const cost = props.error
+    ? `Counting failed: ${props.error.message}`
+    : props.rowsRead === undefined
+      ? "Counting rows…"
+      : `The last count read ${formatCount(props.rowsRead)} ${props.rowsRead === 1 ? "row" : "rows"}.`;
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={<SidebarGroupAction />}
+        aria-label="Recount rows"
+        disabled={props.pending}
+        onClick={props.onClick}
+      >
+        <RefreshCwIcon className={props.pending ? "animate-spin" : undefined} />
+      </TooltipTrigger>
+      <TooltipContent side="right">{cost}</TooltipContent>
+    </Tooltip>
   );
 }
 

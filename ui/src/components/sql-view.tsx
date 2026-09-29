@@ -1,7 +1,9 @@
+import type { QueryNotice } from "@shared/notices";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PlayIcon, SquareTerminalIcon } from "lucide-react";
+import { InfoIcon, PlayIcon, SquareTerminalIcon } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ErrorAlert } from "@/components/error-alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -24,8 +26,8 @@ const isMac = typeof navigator !== "undefined" && /Mac|iP(hone|ad)/.test(navigat
 const EMPTY_SCHEMA = {};
 
 type Outcome =
-  | { kind: "results"; results: QueryResult[]; notices: string[] }
-  | { kind: "error"; message: string; statementIndex?: number };
+  | { kind: "results"; results: QueryResult[]; notice?: QueryNotice; elapsedMs: number }
+  | { kind: "error"; error: Error; sql: string };
 
 /** The SQL tab (UI-7, UI-8): editor above, one results tab per statement below. */
 export function SqlView({ databaseId }: { databaseId: string }) {
@@ -44,29 +46,20 @@ export function SqlView({ databaseId }: { databaseId: string }) {
 
   const run = useMutation({
     mutationFn: (sql: string) => api.query(sql),
-    onSuccess: (body) => {
-      const results = body.results;
-      // Auto-LIMIT and similar notices arrive with remote mode (plan 03).
-      const notices =
-        "notices" in body && Array.isArray(body.notices)
-          ? (body.notices as { message: string }[]).map((n) => n.message)
-          : [];
-      setOutcome({ kind: "results", results, notices });
+    onSuccess: ({ results, notice, elapsedMs }) => {
+      setOutcome({ kind: "results", results, notice, elapsedMs });
       setTab(String(Math.max(0, results.length - 1)));
       if (results.some((r) => r.columns.length === 0)) invalidate();
+      void client.invalidateQueries({ queryKey: ["usage"] });
     },
-    onError: (err) => {
-      setOutcome({
-        kind: "error",
-        message: err.message,
-        statementIndex: err instanceof ApiError ? err.statementIndex : undefined,
-      });
+    onError: (error, sql) => {
+      setOutcome({ kind: "error", error, sql });
       // Statements before the failing one may have written.
       invalidate();
     },
   });
   const invalidate = () => {
-    for (const key of ["tables", "rows", "schema", "schema-all"]) {
+    for (const key of ["tables", "rows", "schema", "schema-all", "usage"]) {
       void client.invalidateQueries({ queryKey: [key] });
     }
   };
@@ -116,14 +109,19 @@ export function SqlView({ databaseId }: { databaseId: string }) {
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel minSize="15%">
-          <Results outcome={outcome} tab={tab} onTab={setTab} />
+          <Results outcome={outcome} tab={tab} onTab={setTab} onRetry={execute} />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
   );
 }
 
-function Results(props: { outcome: Outcome | null; tab: string; onTab: (tab: string) => void }) {
+function Results(props: {
+  outcome: Outcome | null;
+  tab: string;
+  onTab: (tab: string) => void;
+  onRetry: (sql: string) => void;
+}) {
   const { outcome } = props;
   if (!outcome) {
     return (
@@ -139,31 +137,30 @@ function Results(props: { outcome: Outcome | null; tab: string; onTab: (tab: str
     );
   }
   if (outcome.kind === "error") {
+    const { error, sql } = outcome;
+    const index = error instanceof ApiError ? error.statementIndex : undefined;
     return (
       <div className="p-4">
-        <Alert variant="destructive">
-          <AlertTitle>
-            {outcome.statementIndex !== undefined
-              ? `Statement ${outcome.statementIndex + 1} failed`
-              : "The query failed"}
-          </AlertTitle>
-          <AlertDescription className="font-mono whitespace-pre-wrap">
-            {outcome.message}
-          </AlertDescription>
-        </Alert>
+        <ErrorAlert
+          title={index !== undefined ? `Statement ${index + 1} failed` : "The query failed"}
+          error={error}
+          onRetry={() => props.onRetry(sql)}
+        />
       </div>
     );
   }
-  const { results, notices } = outcome;
+  const { results, notice, elapsedMs } = outcome;
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {notices.length > 0 && (
-        <div className="flex flex-col gap-2 px-3 pt-3">
-          {notices.map((n) => (
-            <Alert key={n}>
-              <AlertDescription>{n}</AlertDescription>
-            </Alert>
-          ))}
+      {notice?.kind === "auto-limit" && (
+        <div className="px-3 pt-3">
+          <Alert>
+            <InfoIcon />
+            <AlertDescription>
+              Showing the first {formatCount(notice.limit)} rows. LIMIT added automatically because
+              D1 bills per row read. Add your own LIMIT to change this.
+            </AlertDescription>
+          </Alert>
         </div>
       )}
       <Tabs
@@ -205,7 +202,7 @@ function Results(props: { outcome: Outcome | null; tab: string; onTab: (tab: str
                 Done. {formatCount(r.changes ?? 0)} {r.changes === 1 ? "row" : "rows"} changed.
               </p>
             )}
-            <StatusBar result={r} />
+            <StatusBar result={r} elapsedMs={elapsedMs} />
           </TabsContent>
         ))}
       </Tabs>
@@ -213,16 +210,18 @@ function Results(props: { outcome: Outcome | null; tab: string; onTab: (tab: str
   );
 }
 
-function StatusBar({ result }: { result: QueryResult }) {
-  // Remote mode (plan 03) reports rows read and written.
-  const meta = result as QueryResult & { rowsRead?: number; rowsWritten?: number };
+function StatusBar({ result, elapsedMs }: { result: QueryResult; elapsedMs: number }) {
+  // Remote reports what D1 bills (rows read and written); its duration is
+  // D1's SQL time, so the round trip is shown separately (T3).
+  const remote = result.rowsRead !== undefined;
   const parts = [
     result.columns.length > 0 &&
       `${formatCount(result.rows.length)} ${result.rows.length === 1 ? "row" : "rows"}`,
     formatDuration(result.durationMs),
     result.changes !== undefined && `${formatCount(result.changes)} changed`,
-    meta.rowsRead !== undefined && `${formatCount(meta.rowsRead)} read`,
-    meta.rowsWritten !== undefined && `${formatCount(meta.rowsWritten)} written`,
+    result.rowsRead !== undefined && `${formatCount(result.rowsRead)} read`,
+    result.rowsWritten !== undefined && `${formatCount(result.rowsWritten)} written`,
+    remote && `${formatDuration(elapsedMs)} round trip`,
   ].filter(Boolean);
   return (
     <div
