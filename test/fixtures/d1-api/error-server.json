@@ -1,0 +1,9 @@
+{
+  "status": 503,
+  "body": {
+    "result": null,
+    "success": false,
+    "errors": [{ "code": 7502, "message": "D1 is temporarily unavailable" }],
+    "messages": []
+  }
+}

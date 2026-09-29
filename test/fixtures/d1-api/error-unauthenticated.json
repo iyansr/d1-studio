@@ -1,0 +1,9 @@
+{
+  "status": 401,
+  "body": {
+    "result": null,
+    "success": false,
+    "errors": [{ "code": 10001, "message": "Unable to authenticate request" }],
+    "messages": []
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      { "id": "a1b2c3d4e5f60718293a4b5c6d7e8f90", "name": "Acme Inc", "type": "standard" },
+      { "id": "f0e1d2c3b4a5968778695a4b3c2d1e0f", "name": "Side Project", "type": "standard" }
+    ],
+    "result_info": { "page": 1, "per_page": 50, "count": 2, "total_count": 2 }
+  }
+}

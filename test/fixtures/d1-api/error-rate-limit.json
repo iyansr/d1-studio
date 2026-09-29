@@ -1,0 +1,12 @@
+{
+  "status": 429,
+  "headers": { "Retry-After": "7" },
+  "body": {
+    "result": null,
+    "success": false,
+    "errors": [
+      { "code": 971, "message": "Please wait and consider throttling your request speed" }
+    ],
+    "messages": []
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      {
+        "success": true,
+        "meta": {
+          "changed_db": true,
+          "changes": 2,
+          "duration": 0.5,
+          "last_row_id": 42,
+          "rows_read": 0,
+          "rows_written": 2,
+          "size_after": 20480,
+          "timings": { "sql_duration_ms": 0.5 }
+        },
+        "results": { "columns": [], "rows": [] }
+      },
+      {
+        "success": true,
+        "meta": {
+          "changed_db": false,
+          "changes": 0,
+          "duration": 0.1,
+          "last_row_id": 42,
+          "rows_read": 1,
+          "rows_written": 0,
+          "size_after": 20480,
+          "timings": { "sql_duration_ms": 0.1 }
+        },
+        "results": { "columns": ["n"], "rows": [[42]] }
+      }
+    ]
+  }
+}

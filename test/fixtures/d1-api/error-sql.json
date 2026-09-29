@@ -1,0 +1,9 @@
+{
+  "status": 400,
+  "body": {
+    "result": [],
+    "success": false,
+    "errors": [{ "code": 7500, "message": "no such table: nope: SQLITE_ERROR" }],
+    "messages": []
+  }
+}
