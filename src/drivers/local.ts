@@ -1,7 +1,14 @@
 import { openSqlite, type SqliteConn } from "../local/sqlite";
 import { type Cell, decodeParam, encodeValue, type ParamValue } from "../shared/values";
 import { splitStatements } from "../sql/split";
-import { BatchError, DbError, type Driver, type QueryResult, type Stmt } from "./types";
+import {
+  BatchError,
+  ConflictError,
+  DbError,
+  type Driver,
+  type QueryResult,
+  type Stmt,
+} from "./types";
 
 /** A Miniflare (or any) SQLite file opened in-process. */
 export class LocalDriver implements Driver {
@@ -36,14 +43,20 @@ export class LocalDriver implements Driver {
     this.conn.exec("BEGIN IMMEDIATE");
     try {
       stmts.forEach((stmt, i) => {
+        let result: QueryResult;
         try {
           if (splitStatements(stmt.sql).length !== 1) {
             throw new Error("Each batch entry must be exactly one statement.");
           }
-          results.push(this.execute(stmt.sql, stmt.params ?? []));
+          result = this.execute(stmt.sql, stmt.params ?? []);
         } catch (err) {
           throw new BatchError(i, messageOf(err));
         }
+        // Checked inside the transaction, so a mismatch rolls everything back.
+        if (stmt.expectChanges !== undefined && result.changes !== stmt.expectChanges) {
+          throw new ConflictError(i, stmt.expectChanges, result.changes ?? 0);
+        }
+        results.push(result);
       });
       this.conn.exec("COMMIT");
     } catch (err) {

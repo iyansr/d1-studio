@@ -19,3 +19,19 @@ export function assertReadOnly(statements: Statement[]): void {
     }
   }
 }
+
+const OP_KEYWORDS = { insert: "INSERT", update: "UPDATE", delete: "DELETE" } as const;
+
+/** Grid edits are always writes, so a read-only server refuses them outright. */
+export function assertEditable(
+  readOnly: boolean,
+  ops: readonly { op: keyof typeof OP_KEYWORDS }[],
+): void {
+  const first = ops[0];
+  if (readOnly && first) {
+    throw apiError(
+      403,
+      `Read-only mode: ${OP_KEYWORDS[first.op]} is not allowed. Restart with --write to enable edits.`,
+    );
+  }
+}

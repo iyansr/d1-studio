@@ -69,3 +69,18 @@ export class BatchError extends DbError {
     super(message, index);
   }
 }
+
+/**
+ * A statement with `expectChanges` changed another number of rows, so the
+ * row was changed or deleted since it was loaded. The batch was rolled back.
+ */
+export class ConflictError extends BatchError {
+  override name = "ConflictError";
+  constructor(
+    index: number,
+    readonly expected: number,
+    readonly actual: number,
+  ) {
+    super(index, `Statement ${index + 1} changed ${actual} rows, expected ${expected}.`);
+  }
+}
