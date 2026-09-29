@@ -15,7 +15,7 @@ export default defineConfig({
   },
   test: {
     include: ["test/**/*.test.ts"],
-    exclude: ["test/smoke/**", "**/node_modules/**"],
+    exclude: ["test/smoke/**", "test/live/**", "**/node_modules/**"],
     globalSetup: ["test/global-setup.ts"],
   },
 });

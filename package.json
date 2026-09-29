@@ -23,6 +23,7 @@
     "build:cli": "tsup",
     "test": "vitest run",
     "test:smoke": "vitest run --config vitest.smoke.config.ts",
+    "test:live": "vitest run --config vitest.live.config.ts",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit && pnpm --filter ui typecheck",
     "lint": "biome check .",
