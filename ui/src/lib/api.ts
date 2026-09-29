@@ -1,3 +1,4 @@
+import type { Confirm } from "@shared/edits";
 import type { Filter, PageSize, RowsPage, Sort } from "@shared/rows";
 import { formatSort } from "@shared/rows";
 import type { ParamValue } from "@shared/values";
@@ -100,8 +101,8 @@ export const api = {
       ),
     ) as Promise<RowsPage>;
   },
-  query: (sql: string, params?: ParamValue[]) =>
-    call(client.api.query.$post({ json: { sql, params } })),
+  query: (sql: string, params?: ParamValue[], confirm?: Confirm) =>
+    call(client.api.query.$post({ json: { sql, params, confirm } })),
   candidates: () => call(client.api.candidates.$get()),
   open: (candidateId: number) => call(client.api.open.$post({ json: { candidateId } })),
 };

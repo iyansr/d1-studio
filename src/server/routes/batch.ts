@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { validator } from "hono/validator";
 import { BatchError, ConflictError, type QueryResult } from "../../drivers/types";
-import type { BatchResponse, BatchWarning, Confirm } from "../../shared/edits";
+import type { BatchRequest, BatchResponse, BatchWarning } from "../../shared/edits";
 import { compileEdits, type EditStmt, parseEditOps } from "../../sql/edits";
-import { decideWrite, writePreview } from "../confirm";
+import { decideWrite, enforceWrite, parseConfirm, writePreview } from "../confirm";
 import type { AppContext, Session } from "../context";
 import { apiError } from "../errors";
 import { assertEditable } from "../read-only";
@@ -15,19 +15,10 @@ export function batchRoutes(ctx: AppContext) {
     validator("json", (value) => {
       const body = value as { table?: unknown; ops?: unknown; confirm?: unknown };
       if (typeof body?.table !== "string") throw apiError(400, '"table" must be a string.');
-      const { confirm } = body;
-      if (
-        confirm !== undefined &&
-        confirm !== true &&
-        (typeof confirm !== "string" || confirm === "")
-      ) {
-        throw apiError(400, '"confirm" must be true or the database name.');
-      }
-      return {
-        table: body.table,
-        ops: parseEditOps(body.ops),
-        confirm: confirm as Confirm | undefined,
-      };
+      const parsed: BatchRequest = { table: body.table, ops: parseEditOps(body.ops) };
+      const confirm = parseConfirm(body.confirm);
+      if (confirm !== undefined) parsed.confirm = confirm;
+      return parsed;
     }),
     validator("query", (value) => ({ dryRun: value.dryRun === "1" ? ("1" as const) : undefined })),
     async (c) => {
@@ -49,19 +40,7 @@ export function batchRoutes(ctx: AppContext) {
         confirm,
         databaseName: database.name,
       });
-      if (decision.action === "confirm") {
-        throw apiError(409, "This change needs confirmation before it runs.", {
-          code: "confirmation_required",
-          preview,
-        });
-      }
-      if (decision.action === "mismatch") {
-        throw apiError(
-          403,
-          `Type the database name (${database.name}) exactly to run destructive statements.`,
-          { code: "confirmation_mismatch", preview },
-        );
-      }
+      enforceWrite(decision, preview, database.name);
 
       const started = performance.now();
       let results: QueryResult[];

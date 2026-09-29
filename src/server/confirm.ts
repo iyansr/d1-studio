@@ -1,5 +1,6 @@
 import type { Confirm, ConfirmLevel, PreviewStatement, WritePreview } from "../shared/edits";
 import { classify } from "../sql/classify";
+import { apiError } from "./errors";
 
 /** Where a write comes from. The SQL editor's user wrote the SQL themselves. */
 export type WriteSource = "grid" | "editor";
@@ -62,4 +63,42 @@ export function writePreview(
     dangerous,
     requiresConfirm: confirmationLevel({ ...req, dangerous }),
   };
+}
+
+/** Turns anything but "run" into the response the client needs to go on. */
+export function enforceWrite(
+  decision: WriteDecision,
+  preview: WritePreview,
+  databaseName: string,
+): void {
+  switch (decision.action) {
+    case "run":
+      return;
+    case "refuse":
+      throw apiError(
+        403,
+        "Read-only mode: writes are not allowed. Restart with --write to enable edits.",
+      );
+    case "confirm":
+      throw apiError(
+        409,
+        decision.level === "type-name"
+          ? `This is destructive. Confirm by typing the database name (${databaseName}).`
+          : "This change needs confirmation before it runs.",
+        { code: "confirmation_required", preview },
+      );
+    case "mismatch":
+      throw apiError(
+        403,
+        `Type the database name (${databaseName}) exactly to run destructive statements.`,
+        { code: "confirmation_mismatch", preview },
+      );
+  }
+}
+
+/** The `confirm` field of a request body: `true`, or the database name typed. */
+export function parseConfirm(value: unknown): Confirm | undefined {
+  if (value === undefined || value === true) return value;
+  if (typeof value === "string" && value !== "") return value;
+  throw apiError(400, '"confirm" must be true or the database name.');
 }
