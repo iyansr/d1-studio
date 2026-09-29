@@ -151,8 +151,8 @@ export class D1Client {
       const info = body.result_info;
       const size = info?.per_page ?? perPage;
       const total = info?.total_count;
-      const done =
-        items.length === 0 || (total !== undefined ? all.length >= total : items.length < size);
+      // A short page is the last one, whatever `total_count` says.
+      const done = items.length < size || (total !== undefined && all.length >= total);
       if (done) break;
     }
     return all;
