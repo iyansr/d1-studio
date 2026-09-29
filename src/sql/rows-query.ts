@@ -7,8 +7,8 @@ import {
   type PageSize,
   parseSort,
   ROWID_COLUMN,
-  type RowKey,
   type RowsColumn,
+  type RowsKey,
   type Sort,
   UNARY_OPS,
 } from "../shared/rows";
@@ -117,7 +117,7 @@ const OPERATORS: Record<FilterOp, string> = {
 export interface RowsQuery {
   select: { sql: string; params: ParamValue[] };
   count?: { sql: string; params: ParamValue[] };
-  key: RowKey;
+  key: RowsKey;
 }
 
 /**
@@ -133,7 +133,7 @@ export function buildRowsQuery(schema: TableSchema, params: RowsParams): RowsQue
   };
 
   const rowidAlias = schema.rowid ? rowidName(schema) : undefined;
-  const key: RowKey = rowidAlias
+  const key: RowsKey = rowidAlias
     ? { kind: "rowid", columns: [ROWID_COLUMN] }
     : schema.type === "table" && schema.primaryKey.length > 0
       ? { kind: "pk", columns: schema.primaryKey }

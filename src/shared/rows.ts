@@ -38,8 +38,8 @@ export interface Sort {
  */
 export const ROWID_COLUMN = "__d1s_rowid";
 
-/** How a row is identified for edits (plan 04). */
-export type RowKey =
+/** The columns that identify a row of the page for edits (plan 04). */
+export type RowsKey =
   | { kind: "rowid"; columns: [typeof ROWID_COLUMN] }
   | { kind: "pk"; columns: string[] }
   | { kind: "none"; columns: [] };
@@ -58,7 +58,7 @@ export interface RowsPage {
   rows: Cell[][];
   hasMore: boolean;
   total?: number;
-  key: RowKey;
+  key: RowsKey;
 }
 
 /** `sort=col:asc`. The column is everything before the last colon. */
