@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { UserError } from "../errors";
-import { type Account, D1ApiError, D1Client } from "./client";
+import { type Account, D1ApiError, D1Client, NO_D1_ACCESS } from "./client";
 import { Secret } from "./secret";
 
 export type CredentialSource = "env" | "wrangler";
@@ -48,7 +48,6 @@ export interface ResolveOptions {
 }
 
 export const NO_CREDENTIALS = "Run `wrangler login` or set CLOUDFLARE_API_TOKEN.";
-export const NO_D1_ACCESS = 'Token lacks D1 access (needs "D1 Read"; "D1 Edit" for --write).';
 const TIMEOUT_MS = 10_000;
 
 /**

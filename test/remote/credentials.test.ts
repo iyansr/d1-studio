@@ -4,12 +4,11 @@ import path from "node:path";
 import { inspect } from "node:util";
 import { afterAll, describe, expect, test, vi } from "vitest";
 import { UserError } from "../../src/errors";
-import { D1ApiError } from "../../src/remote/client";
+import { D1ApiError, NO_D1_ACCESS } from "../../src/remote/client";
 import {
   explainAuthError,
   findWrangler,
   NO_CREDENTIALS,
-  NO_D1_ACCESS,
   parseAuthToken,
   type ResolveOptions,
   type RunResult,

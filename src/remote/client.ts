@@ -3,6 +3,9 @@ import type { Secret } from "./secret";
 /** The only host the token is ever sent to. */
 export const API_BASE = "https://api.cloudflare.com/client/v4";
 
+/** A 403 from D1: the token is valid but not scoped for D1. */
+export const NO_D1_ACCESS = 'Token lacks D1 access (needs "D1 Read"; "D1 Edit" for --write).';
+
 const TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
 /** A longer `Retry-After` is surfaced to the user instead of waited out. */

@@ -14,6 +14,7 @@
   - the resolution order
   - the API token permissions needed (D1 Read, and D1 Edit for `--write`)
   - how to create a scoped token
+  - that integers beyond 2^53 lose precision in remote mode, because the D1 API returns them as JSON numbers (03-T3)
 - **Safety model:**
   - read-only by default
   - what `--write` asks for

@@ -10,7 +10,17 @@ export interface QueryResult {
   rows: Cell[][];
   changes?: number;
   lastRowId?: Cell;
+  /** Engine time; for remote, D1's SQL time without the network. */
   durationMs: number;
+  /** Remote only: what D1 bills for. */
+  rowsRead?: number;
+  rowsWritten?: number;
+}
+
+/** Rows read and written so far in this session (remote only). */
+export interface Usage {
+  rowsRead: number;
+  rowsWritten: number;
 }
 
 /**
@@ -20,6 +30,8 @@ export interface QueryResult {
 export interface Driver {
   readonly mode: "local" | "remote";
   readonly readOnly: boolean;
+  /** Session totals; remote only, since D1 bills per row. */
+  readonly usage?: Usage;
   /** Runs each statement in `sql` in order; one result per statement. */
   query(sql: string, params?: ParamValue[]): Promise<QueryResult[]>;
   /** Runs single statements in one transaction; all or nothing. */

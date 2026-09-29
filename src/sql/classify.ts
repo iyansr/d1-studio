@@ -19,6 +19,11 @@ export interface Classification {
   hasWhere: boolean;
 }
 
+/** A statement that can't change the database (read-only mode, retries). */
+export function isReadKind(kind: StatementKind): boolean {
+  return kind === "read" || kind === "pragma-read";
+}
+
 const KINDS: Record<string, StatementKind> = {
   SELECT: "read",
   VALUES: "read",
