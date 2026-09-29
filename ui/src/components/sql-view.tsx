@@ -1,3 +1,4 @@
+import type { Confirm, WritePreview } from "@shared/edits";
 import type { QueryNotice } from "@shared/notices";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { InfoIcon, PlayIcon, SquareTerminalIcon } from "lucide-react";
@@ -17,8 +18,9 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SqlEditor, type SqlEditorHandle, sqlNamespace } from "@/editor/sql-editor";
+import { WriteConfirmDialog } from "@/edits/confirm-dialog";
 import { DataGrid } from "@/grid/DataGrid";
-import { ApiError, api, type QueryResult, queries } from "@/lib/api";
+import { ApiError, api, type Meta, type QueryResult, queries } from "@/lib/api";
 import { formatCount, formatDuration } from "@/lib/format";
 import { readStored, writeStored } from "@/lib/storage";
 
@@ -30,8 +32,8 @@ type Outcome =
   | { kind: "error"; error: Error; sql: string };
 
 /** The SQL tab (UI-7, UI-8): editor above, one results tab per statement below. */
-export function SqlView({ databaseId }: { databaseId: string }) {
-  const storageKey = `sql:${databaseId}`;
+export function SqlView({ meta }: { meta: Meta }) {
+  const storageKey = `sql:${meta.database?.id ?? meta.database?.name ?? "db"}`;
   const [initial] = useState(() => readStored(storageKey, ""));
   const editor = useRef<SqlEditorHandle | null>(null);
   const client = useQueryClient();
@@ -44,20 +46,35 @@ export function SqlView({ databaseId }: { databaseId: string }) {
   const [tab, setTab] = useState("0");
   const saveTimer = useRef<number | undefined>(undefined);
 
+  // Remote write mode: destructive SQL comes back as a 409 with the statements,
+  // and runs once the dialog sends the database name (T4, T7).
+  const [pending, setPending] = useState<{ sql: string; preview: WritePreview } | null>(null);
   const run = useMutation({
-    mutationFn: (sql: string) => api.query(sql),
+    mutationFn: ({ sql, confirm }: { sql: string; confirm?: Confirm }) =>
+      api.query(sql, undefined, confirm),
     onSuccess: ({ results, notice, elapsedMs }) => {
+      setPending(null);
       setOutcome({ kind: "results", results, notice, elapsedMs });
       setTab(String(Math.max(0, results.length - 1)));
       if (results.some((r) => r.columns.length === 0)) invalidate();
       void client.invalidateQueries({ queryKey: ["usage"] });
     },
-    onError: (error, sql) => {
-      setOutcome({ kind: "error", error, sql });
+    onError: (error, { sql, confirm }) => {
+      const preview = error instanceof ApiError ? error.confirmation : undefined;
+      if (preview) {
+        setPending({ sql, preview });
+        return;
+      }
       // Statements before the failing one may have written.
       invalidate();
+      // From the dialog, the error is shown there, beside the SQL.
+      if (confirm === undefined) setOutcome({ kind: "error", error, sql });
     },
   });
+  const dialogError =
+    pending && run.error && !(run.error instanceof ApiError && run.error.confirmation)
+      ? run.error
+      : null;
   const invalidate = () => {
     for (const key of ["tables", "rows", "schema", "schema-all", "usage"]) {
       void client.invalidateQueries({ queryKey: [key] });
@@ -65,7 +82,7 @@ export function SqlView({ databaseId }: { databaseId: string }) {
   };
   const execute = (sql: string) => {
     if (sql.trim() === "" || run.isPending) return;
-    run.mutate(sql);
+    run.mutate({ sql });
   };
 
   return (
@@ -112,6 +129,19 @@ export function SqlView({ databaseId }: { databaseId: string }) {
           <Results outcome={outcome} tab={tab} onTab={setTab} onRetry={execute} />
         </ResizablePanel>
       </ResizablePanelGroup>
+      <WriteConfirmDialog
+        preview={pending?.preview ?? null}
+        database={meta.database?.name ?? ""}
+        account={meta.account}
+        atomic={false}
+        running={run.isPending && run.variables?.confirm !== undefined}
+        error={dialogError}
+        onRun={(confirm) => pending && run.mutate({ sql: pending.sql, confirm })}
+        onCancel={() => {
+          setPending(null);
+          run.reset();
+        }}
+      />
     </div>
   );
 }

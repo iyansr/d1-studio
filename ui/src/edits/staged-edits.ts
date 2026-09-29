@@ -107,7 +107,10 @@ export class StagedEdits {
 
   /** Un-stages a row's edits, its deletion, or (for an inserted row) the row itself. */
   revertRow(rowId: string): void {
-    if (isInsertId(rowId)) return this.removeInserts([rowId]);
+    if (isInsertId(rowId)) {
+      this.removeInserts([rowId]);
+      return;
+    }
     const updates = new Map(this.snap.updates);
     const deletes = new Map(this.snap.deletes);
     if (updates.delete(rowId) || deletes.delete(rowId)) this.commit({ updates, deletes });

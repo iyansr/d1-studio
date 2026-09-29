@@ -11,7 +11,7 @@ import {
   type ResolveOptions,
   resolveCredentials,
 } from "../remote/credentials";
-import { type DatabaseMeta, readySession, type Session } from "../server/context";
+import { type AccountMeta, type DatabaseMeta, readySession, type Session } from "../server/context";
 import type { CliOptions } from "./args";
 import { confirmRemoteWrite, shortId, type TextPrompt } from "./confirm";
 
@@ -38,6 +38,7 @@ export interface OpenedRemote {
   source?: { label: "config"; value: string };
   /** The banner's `account` line. */
   account: string;
+  accountMeta: AccountMeta;
 }
 
 interface Target {
@@ -77,12 +78,12 @@ export async function openRemote(options: CliOptions, deps: RemoteDeps): Promise
       ? await fromBindings(client, creds, bindings, options.db, { tty: deps.tty, where })
       : await fromAccount(client, creds, options.db, deps);
 
+  let accountLabel = creds.accountName;
   if (!readOnly) {
+    // Best effort, and only when writing: it is one more API call.
+    accountLabel ??= await accountName(client, creds);
     await confirmRemoteWrite(
-      {
-        account: { id: creds.accountId, name: await accountName(client, creds) },
-        database: target,
-      },
+      { account: { id: creds.accountId, name: accountLabel }, database: target },
       { tty: deps.tty, yes: options.yes, prompt: deps.confirm, print: deps.print },
     );
   }
@@ -104,6 +105,7 @@ export async function openRemote(options: CliOptions, deps: RemoteDeps): Promise
       value: `${displayPath(found.path, deps.cwd)}${found.redirected ? " (redirected)" : ""}`,
     },
     account: `${creds.accountName ? `${creds.accountName} (${shortId(creds.accountId)})` : creds.accountId}, via ${via}`,
+    accountMeta: { id: creds.accountId, name: accountLabel ?? null },
   };
 }
 

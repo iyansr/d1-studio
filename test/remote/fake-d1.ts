@@ -3,7 +3,7 @@ import { openSqlite, type SqliteConn } from "../../src/local/sqlite";
 import { type Account, D1Client, type D1Database, type D1RawResult } from "../../src/remote/client";
 import { Secret } from "../../src/remote/secret";
 import { splitStatements } from "../../src/sql/split";
-import { type Canned, stubFetch } from "./stub";
+import { type Canned, type Recorded, stubFetch } from "./stub";
 
 export const FAKE_TOKEN = "fake-d1-token-7c1e0b";
 export const FAKE_TARGET = { accountId: "acc-fake", databaseId: "db-fake" };
@@ -36,6 +36,8 @@ export interface FakeOptions {
   accounts?: Account[];
   /** Listed by the account; only `FAKE_DATABASE` can be queried. */
   databases?: D1Database[];
+  /** Answers a request instead of the fake, e.g. a 429. Return nothing to pass it on. */
+  intercept?: (req: Recorded) => Canned | undefined;
 }
 
 /**
@@ -48,6 +50,8 @@ export async function fakeD1(file: string, options: FakeOptions = {}) {
   const accounts = options.accounts ?? [FAKE_ACCOUNT];
   const databases = options.databases ?? [FAKE_DATABASE];
   const stub = stubFetch((req): Canned => {
+    const intercepted = options.intercept?.(req);
+    if (intercepted) return intercepted;
     if (req.headers.get("authorization") !== `Bearer ${FAKE_TOKEN}`) {
       return failure(401, 10001, "Unable to authenticate request");
     }

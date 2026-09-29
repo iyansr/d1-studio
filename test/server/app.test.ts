@@ -116,11 +116,18 @@ describe("auth", () => {
       version: "1.2.3",
       mode: "local",
       database,
+      account: null,
       readOnly: false,
       state: "ready",
       unmatched: null,
       notices: [],
     });
+  });
+
+  test("meta names the remote account for the write confirmation", async () => {
+    const account = { id: "a1b2c3", name: "Acme Inc" };
+    const res = await request(createApp(makeCtx({ account })), "/api/meta", authed());
+    expect(((await res.json()) as { account: unknown }).account).toEqual(account);
   });
 
   test("meta carries notices for the UI", async () => {

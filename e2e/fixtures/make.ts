@@ -1,7 +1,8 @@
 // Builds the Miniflare-style state for the e2e fixture projects. Runs from
 // Playwright's globalSetup, from `pnpm dev`, or by hand with
 // `node --experimental-strip-types e2e/fixtures/make.ts`. Node builtins only.
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
@@ -105,3 +106,70 @@ export function e2eFixturesExist(): boolean {
 }
 
 if (process.argv[1] === import.meta.filename) makeE2eFixtures();
+
+/** Small tables for the editing specs: each spec gets its own copy, since they write. */
+const EDIT_SQL = `
+  CREATE TABLE _cf_KV (key TEXT PRIMARY KEY, value BLOB) WITHOUT ROWID;
+  CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    name TEXT,
+    age INTEGER,
+    score REAL,
+    prefs TEXT DEFAULT '{}',
+    bio TEXT,
+    active INTEGER NOT NULL DEFAULT 1
+  );
+  WITH RECURSIVE s(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM s WHERE i < 12)
+  INSERT INTO users (email, name, age, score, prefs, bio)
+  SELECT 'user' || i || '@example.com', 'User ' || i, 20 + i, i * 1.5,
+    CASE WHEN i = 1 THEN '{"theme":"dark","tags":["a","b"]}' ELSE '{}' END,
+    CASE WHEN i = 2 THEN 'first line' || char(10) || 'second line' ELSE NULL END
+  FROM s;
+
+  CREATE TABLE notes (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL DEFAULT 'untitled',
+    body TEXT DEFAULT 'todo',
+    pinned INTEGER NOT NULL DEFAULT 0
+  );
+  INSERT INTO notes (title, body) VALUES ('first', 'hello'), ('second', 'world');
+
+  CREATE TABLE memberships (org INTEGER NOT NULL, usr INTEGER NOT NULL, role TEXT, PRIMARY KEY (usr, org)) WITHOUT ROWID;
+  INSERT INTO memberships VALUES (1, 1, 'owner'), (1, 2, 'member'), (2, 1, 'member');
+
+  CREATE TABLE files (id INTEGER PRIMARY KEY, name TEXT, data BLOB);
+  INSERT INTO files (name, data) VALUES ('logo.png', randomblob(64));
+
+  CREATE VIEW user_emails AS SELECT id, email FROM users;
+`;
+
+/** Writes `EDIT_SQL` into a fresh database file. */
+export function makeEditDb(file: string) {
+  rmSync(file, { force: true });
+  createDb(file, EDIT_SQL);
+}
+
+/** A throwaway Wrangler project with the editing tables, for one spec. Returns its directory. */
+export function makeEditProject(): string {
+  const dir = mkdtempSync(path.join(tmpdir(), "d1s-e2e-edit-"));
+  writeFileSync(
+    path.join(dir, "wrangler.jsonc"),
+    JSON.stringify({
+      name: "e2e-edit",
+      main: "src/index.ts",
+      compatibility_date: "2026-09-01",
+      d1_databases: [
+        {
+          binding: "DB",
+          database_name: "app-db",
+          database_id: "3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90",
+        },
+      ],
+    }),
+  );
+  const d1 = path.join(dir, D1_DIR);
+  mkdirSync(d1, { recursive: true });
+  makeEditDb(path.join(d1, DB_FILE));
+  return dir;
+}

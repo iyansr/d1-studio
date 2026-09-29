@@ -15,7 +15,13 @@ import {
 } from "../local/locate";
 import { displayPath } from "../paths";
 import { createApp } from "../server/app";
-import { type AppContext, type DatabaseMeta, readySession, type Session } from "../server/context";
+import {
+  type AccountMeta,
+  type AppContext,
+  type DatabaseMeta,
+  readySession,
+  type Session,
+} from "../server/context";
 import { createToken, isLoopback } from "../server/security";
 import { WRANGLER_DEV_WRITES } from "../shared/notices";
 import { type CliOptions, parseCli, renderHelp } from "./args";
@@ -32,6 +38,7 @@ interface Opened {
   database: string;
   source?: BannerInfo["source"];
   account?: string;
+  accountMeta?: AccountMeta;
   openCandidate?: AppContext["openCandidate"];
   drivers: Driver[];
   notes: string[];
@@ -67,6 +74,7 @@ export async function main(argv: string[]): Promise<void> {
     uiDir: fileURLToPath(new URL("./ui/", import.meta.url)),
     devHosts: dev ? [`localhost:${VITE_PORT}`, `127.0.0.1:${VITE_PORT}`] : undefined,
     session: opened.session,
+    account: opened.accountMeta,
     notices: options.mode === "local" && !readOnly ? [WRANGLER_DEV_WRITES] : [],
     openCandidate: opened.openCandidate,
   };
@@ -121,6 +129,7 @@ async function openRemoteSession(options: CliOptions, tty: boolean): Promise<Ope
     database: opened.database,
     source: opened.source,
     account: opened.account,
+    accountMeta: opened.accountMeta,
     drivers: [opened.driver],
     notes: [],
   };

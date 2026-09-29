@@ -1,4 +1,4 @@
-import type { Confirm } from "@shared/edits";
+import type { BatchRequest, BatchResponse, Confirm, WritePreview } from "@shared/edits";
 import type { Filter, PageSize, RowsPage, Sort } from "@shared/rows";
 import { formatSort } from "@shared/rows";
 import type { ParamValue } from "@shared/values";
@@ -9,6 +9,16 @@ import type { AppType } from "../../../src/server/app";
 /** Types come from the server routes; there are no hand-written DTOs. */
 const client = hc<AppType>("/");
 
+/** What an error body carries beyond its message. */
+export interface ApiErrorDetail {
+  /** `conflict`, `confirmation_required` or `confirmation_mismatch`. */
+  code?: string;
+  /** The failing op of a batch, as staged. */
+  opIndex?: number;
+  /** The SQL that would run, with a confirmation error. */
+  preview?: WritePreview;
+}
+
 /** An API error. `message` is the server's (for SQL errors, the engine's verbatim). */
 export class ApiError extends Error {
   override name = "ApiError";
@@ -18,6 +28,7 @@ export class ApiError extends Error {
     readonly statementIndex?: number,
     /** 429: seconds until the D1 API takes requests again. */
     readonly retryAfter?: number,
+    readonly detail: ApiErrorDetail = {},
   ) {
     super(message);
   }
@@ -25,6 +36,11 @@ export class ApiError extends Error {
   /** The request may work if sent again: offline, rate limited, or a server/upstream failure. */
   get retryable(): boolean {
     return this.status === 0 || this.status === 429 || this.status >= 500;
+  }
+
+  /** A remote write needs a confirmation: run it again with `confirm`. */
+  get confirmation(): WritePreview | undefined {
+    return this.detail.code === "confirmation_required" ? this.detail.preview : undefined;
   }
 }
 
@@ -58,7 +74,16 @@ async function call<R extends ClientResponse<unknown, number, string>>(
     throw new ApiError("Can't reach the studio server. Is d1-studio still running?", 0);
   }
   const body = (await res.json().catch(() => undefined)) as
-    | { error?: { message?: string; statementIndex?: number; retryAfter?: number } }
+    | {
+        error?: {
+          message?: string;
+          code?: string;
+          statementIndex?: number;
+          opIndex?: number;
+          retryAfter?: number;
+        };
+        preview?: WritePreview;
+      }
     | undefined;
   if (!res.ok) {
     if (res.status === 401) sessionLost.set();
@@ -68,6 +93,7 @@ async function call<R extends ClientResponse<unknown, number, string>>(
       res.status,
       error?.statementIndex,
       error?.retryAfter,
+      { code: error?.code, opIndex: error?.opIndex, preview: body?.preview },
     );
   }
   return body as Ok<R>;
@@ -103,6 +129,14 @@ export const api = {
   },
   query: (sql: string, params?: ParamValue[], confirm?: Confirm) =>
     call(client.api.query.$post({ json: { sql, params, confirm } })),
+  /** Applies staged edits in one transaction (04-T3). */
+  batch: (req: BatchRequest) =>
+    call(
+      client.api.batch.$post({ json: req, query: { dryRun: undefined } }),
+    ) as Promise<BatchResponse>,
+  /** The exact SQL `batch` would run, and what confirming it takes. */
+  batchPreview: (req: BatchRequest) =>
+    call(client.api.batch.$post({ json: req, query: { dryRun: "1" } })) as Promise<WritePreview>,
   candidates: () => call(client.api.candidates.$get()),
   open: (candidateId: number) => call(client.api.open.$post({ json: { candidateId } })),
 };

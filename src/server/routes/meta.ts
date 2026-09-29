@@ -10,6 +10,7 @@ export function metaRoutes(ctx: AppContext) {
           version: ctx.version,
           mode: ctx.mode,
           database: session.state === "ready" ? session.database : null,
+          account: ctx.account ?? null,
           readOnly: ctx.readOnly,
           state: session.state,
           /** needs-db: the binding no file matched. */

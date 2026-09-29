@@ -78,7 +78,7 @@ export function Studio({ meta }: { meta: Meta }) {
             </>
           )}
           <TabsContent value="sql" keepMounted className="flex min-h-0 flex-col">
-            <SqlView databaseId={meta.database?.id ?? meta.database?.name ?? "db"} />
+            <SqlView meta={meta} />
           </TabsContent>
         </Tabs>
       </SidebarInset>

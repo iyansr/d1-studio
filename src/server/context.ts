@@ -31,6 +31,12 @@ export type Session =
       unmatched?: DatabaseMeta;
     };
 
+/** The Cloudflare account behind a remote database, for the write confirmation. */
+export interface AccountMeta {
+  id: string;
+  name: string | null;
+}
+
 export interface AppContext {
   version: string;
   mode: "local" | "remote";
@@ -42,6 +48,8 @@ export interface AppContext {
   /** Extra `host:port` values allowed in `Host` and `Origin` (the Vite dev server). */
   devHosts?: string[];
   session: Session;
+  /** Remote only. */
+  account?: AccountMeta;
   notices: Notice[];
   /** Opens a candidate picked in the UI (needs-db state). */
   openCandidate?: (candidate: CandidateFile) => Promise<{ driver: Driver; database: DatabaseMeta }>;
