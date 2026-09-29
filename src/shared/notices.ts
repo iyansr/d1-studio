@@ -14,3 +14,10 @@ export const WRANGLER_DEV_WRITES: Notice = {
   message:
     "If `wrangler dev` is running, a Worker write that overlaps a studio write fails with SQLITE_BUSY. Reads are safe, and nothing is corrupted.",
 };
+
+/** Attached to a query response when the server changed the query (T6). */
+export interface QueryNotice {
+  kind: "auto-limit";
+  /** Rows returned; the query had more. */
+  limit: number;
+}

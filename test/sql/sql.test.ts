@@ -227,6 +227,9 @@ describe("classify", () => {
     ["REINDEX", c("other", "REINDEX")],
     ["ANALYZE", c("other", "ANALYZE")],
     ["SeLeCt 1", c("read", "SELECT")],
+    // Look-alike keywords are not keywords, so they never pass as reads.
+    ["ＤＥＬＥＴＥ FROM t", c("other", "ＤＥＬＥＴＥ")],
+    ["DEL\u200bETE FROM t", c("other", "DEL\u200bETE")],
     ["SELECT 名前 FROM ütable WHERE naïve = 1", c("read", "SELECT", false, true)],
     ["(SELECT 1)", c("other", "(")],
   ])("%j", (sql, expected) => {

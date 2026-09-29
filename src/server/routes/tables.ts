@@ -1,21 +1,38 @@
 import { Hono } from "hono";
 import { validator } from "hono/validator";
-import { countRows } from "../../drivers/introspect";
+import { countRows, type QueryFn } from "../../drivers/introspect";
 import type { RowsPage } from "../../shared/rows";
 import { buildRowsQuery, parseRowsParams, RowsQueryError, rowsColumns } from "../../sql/rows-query";
-import type { AppContext } from "../context";
+import type { AppContext, Session, TableCounts } from "../context";
 import { apiError } from "../errors";
 import { requireReady } from "./ready";
 
 export function tableRoutes(ctx: AppContext) {
   return new Hono()
     .get("/tables", async (c) => {
-      const { driver, schema } = requireReady(ctx);
-      const tables = await schema.tables();
-      const visible = tables.filter((t) => !t.hidden).map((t) => t.name);
-      const counts = await countRows(driver.query.bind(driver), visible);
+      const session = requireReady(ctx);
+      const tables = await session.schema.tables();
+      // Remote: COUNT(*) reads every row, so counts come from /tables/counts (D9).
+      const counts: TableCounts["counts"] =
+        session.driver.mode === "remote" ? {} : (await countTables(session)).counts;
       return c.json({ tables: tables.map((t) => ({ ...t, rows: counts[t.name] ?? null })) });
     })
+    .get(
+      "/tables/counts",
+      validator("query", (value) => ({ refresh: value.refresh === "1" ? "1" : undefined })),
+      async (c) => {
+        const session = requireReady(ctx);
+        // Local counts are cheap and change under a running Worker: never cached.
+        if (c.req.valid("query").refresh || session.driver.mode === "local") {
+          session.counts = undefined;
+        }
+        session.counts ??= countTables(session).catch((err: unknown) => {
+          session.counts = undefined;
+          throw err;
+        });
+        return c.json(await session.counts);
+      },
+    )
     .get("/tables/:name/schema", async (c) => {
       const { schema } = requireReady(ctx);
       return c.json(await schema.describe(c.req.param("name")));
@@ -85,4 +102,17 @@ export function tableRoutes(ctx: AppContext) {
       const { schema } = requireReady(ctx);
       return c.json({ tables: await schema.all() });
     });
+}
+
+/** Row counts of the visible tables (hidden ones are never counted), with their cost. */
+async function countTables(session: Extract<Session, { state: "ready" }>): Promise<TableCounts> {
+  const tables = await session.schema.tables();
+  let rowsRead = 0;
+  const query: QueryFn = async (sql, params) => {
+    const results = await session.driver.query(sql, params);
+    for (const r of results) rowsRead += r.rowsRead ?? 0;
+    return results;
+  };
+  const visible = tables.filter((t) => !t.hidden).map((t) => t.name);
+  return { counts: await countRows(query, visible), rowsRead };
 }

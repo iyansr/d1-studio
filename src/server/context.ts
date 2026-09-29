@@ -9,8 +9,21 @@ export interface DatabaseMeta {
   id: string | null;
 }
 
+/** Row counts per visible table, and what counting them cost (D9). */
+export interface TableCounts {
+  counts: Record<string, number | null>;
+  rowsRead: number;
+}
+
 export type Session =
-  | { state: "ready"; driver: Driver; database: DatabaseMeta; schema: SchemaCache }
+  | {
+      state: "ready";
+      driver: Driver;
+      database: DatabaseMeta;
+      schema: SchemaCache;
+      /** Remote: counted once per session, then only on refresh (D9). */
+      counts?: Promise<TableCounts>;
+    }
   | {
       state: "needs-db";
       candidates: CandidateFile[];
