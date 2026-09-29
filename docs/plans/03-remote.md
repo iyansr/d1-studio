@@ -142,3 +142,23 @@ File: `src/sql/limit.ts`.
 - **Mocked:** a fetch stub replays the S1 fixtures. RemoteDriver passes the same introspection suite as LocalDriver, as one parametrised test file.
 - **Server:** a read-only 403 for every write kind, and `--write` without `--yes` in non-TTY exits 1.
 - **Live, optional:** `pnpm test:live` runs only when `D1S_LIVE_TOKEN` and `D1S_LIVE_ACCOUNT` are set. It creates a throwaway D1 DB, seeds it, runs the read, read-only, auto-limit and batch suites, then deletes the DB.
+
+---
+
+## Status (2026-09-29)
+
+T0–T10 are implemented and covered by mocked tests. RemoteDriver runs the shared introspection suite through a SQLite-backed fake of the D1 API (`test/remote/fake-d1.ts`).
+
+**Still open**
+
+- The spikes were desk research: the API reference and Wrangler 4.129's source. The live checks are listed in `docs/notes/d1-rest.md` and `docs/notes/wrangler-auth.md`. `pnpm test:live` with a throwaway account answers the two that matter for plan 04: batch atomicity and parameter types.
+- The "< 5 s to first table" exit criterion needs a live measurement.
+
+**Deviations**
+
+- **T3:** `describe` takes two round trips, because `index_xinfo` needs the index names from the first.
+- **T3:** remote batch errors carry no statement index, because D1 doesn't say which entry failed.
+- **T4:** the remote count cache is not dropped after a write; ↻ recounts. Local counts are never cached.
+- **T5:** `/api/batch` arrives with plan 04. It should call `assertReadOnly` (`src/server/read-only.ts`), which `/api/query` already uses.
+- **T9:** pending counts use a `Skeleton` inside the badge, not `SidebarMenuSkeleton`, which draws a whole row. The ↻ button is `SidebarGroupAction` itself, which is already a ghost icon button, with a `Tooltip`.
+- **T9:** Retry appears only for errors a retry can fix: offline, 429 and 5xx. SQL errors don't get it.
