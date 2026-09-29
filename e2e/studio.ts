@@ -16,9 +16,11 @@ async function startStudio(
   project: string,
   args: string[],
 ): Promise<{ child: ChildProcess; url: string }> {
+  // Playwright sets FORCE_COLOR, which beats NO_COLOR and puts escape codes in the banner.
+  const { FORCE_COLOR: _, ...env } = process.env;
   const child = spawn(process.execPath, [cli, "--no-open", "--port", "0", ...args], {
     cwd: path.join(root, "e2e", "fixtures", project),
-    env: { ...process.env, NO_COLOR: "1" },
+    env: { ...env, NO_COLOR: "1" },
   });
   let out = "";
   child.stdout?.on("data", (d) => {
