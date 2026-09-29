@@ -205,8 +205,11 @@ describe(`smoke (${path.basename(runtime)})`, () => {
       },
       body: JSON.stringify({ sql: "DELETE FROM events" }),
     });
-    expect(res.status).toBe(400);
-    expect(JSON.parse(res.body).error.message).toBe("attempt to write a readonly database");
+    // The server refuses it (T5) before the read-only file would (defence in depth).
+    expect(res.status).toBe(403);
+    expect(JSON.parse(res.body).error.message).toBe(
+      "Read-only mode: DELETE is not allowed. Restart with --write to enable edits.",
+    );
   });
 
   test("a positional path skips discovery", async () => {

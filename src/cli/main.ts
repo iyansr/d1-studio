@@ -22,6 +22,7 @@ import { type CliOptions, parseCli, renderHelp } from "./args";
 import { type BannerInfo, formatBanner, formatDatabase, formatHostWarning } from "./banner";
 import { openBrowser } from "./browser";
 import { listen, resolvePort } from "./port";
+import { openRemote } from "./remote";
 
 /** ui/vite.config.ts */
 const VITE_PORT = 5173;
@@ -30,8 +31,10 @@ interface Opened {
   session: Session;
   database: string;
   source?: BannerInfo["source"];
+  account?: string;
   openCandidate?: AppContext["openCandidate"];
   drivers: Driver[];
+  notes: string[];
 }
 
 /** Runs the CLI. Resolves once the server is listening (or on --help/--version). */
@@ -47,24 +50,24 @@ export async function main(argv: string[]): Promise<void> {
   }
   const options = parsed.options;
   const { port, strict } = resolvePort({ flag: options.port, env: process.env.D1_STUDIO_PORT });
-  if (options.mode === "remote") {
-    throw new UserError("Remote mode isn't available in this build yet.");
-  }
-
   const readOnly = !options.write;
-  const opened = await openLocal(options, readOnly);
+  const tty = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  const opened =
+    options.mode === "remote"
+      ? await openRemoteSession(options, tty)
+      : await openLocal(options, readOnly, tty);
   // `pnpm dev`: the UI is served by Vite, which proxies /api here.
   const dev = process.env.D1_STUDIO_DEV === "1";
   const ctx: AppContext = {
     version: __VERSION__,
-    mode: "local",
+    mode: options.mode,
     readOnly,
     token: createToken(),
     bind: { host: options.host, port },
     uiDir: fileURLToPath(new URL("./ui/", import.meta.url)),
     devHosts: dev ? [`localhost:${VITE_PORT}`, `127.0.0.1:${VITE_PORT}`] : undefined,
     session: opened.session,
-    notices: readOnly ? [] : [WRANGLER_DEV_WRITES],
+    notices: options.mode === "local" && !readOnly ? [WRANGLER_DEV_WRITES] : [],
     openCandidate: opened.openCandidate,
   };
 
@@ -84,16 +87,15 @@ export async function main(argv: string[]): Promise<void> {
   console.log(
     formatBanner({
       version: __VERSION__,
-      mode: "local",
+      mode: options.mode,
       readOnly,
       database: opened.database,
+      account: opened.account,
       source: opened.source,
       url,
       devUrl: dev ? `http://localhost:${VITE_PORT}/?t=${ctx.token}` : undefined,
       busyPort: port !== 0 && ctx.bind.port !== port ? port : undefined,
-      notes: readOnly
-        ? []
-        : ["writes here can make concurrent `wrangler dev` writes fail (SQLITE_BUSY)"],
+      notes: opened.notes,
     }),
   );
   if (!isLoopback(options.host)) console.log(`\n${formatHostWarning(options.host, readOnly)}`);
@@ -112,8 +114,23 @@ export async function main(argv: string[]): Promise<void> {
   process.once("SIGTERM", shutdown);
 }
 
-async function openLocal(options: CliOptions, readOnly: boolean): Promise<Opened> {
+async function openRemoteSession(options: CliOptions, tty: boolean): Promise<Opened> {
+  const opened = await openRemote(options, { env: process.env, cwd: process.cwd(), tty });
+  return {
+    session: opened.session,
+    database: opened.database,
+    source: opened.source,
+    account: opened.account,
+    drivers: [opened.driver],
+    notes: [],
+  };
+}
+
+async function openLocal(options: CliOptions, readOnly: boolean, tty: boolean): Promise<Opened> {
   const cwd = process.cwd();
+  const notes = readOnly
+    ? []
+    : ["writes here can make concurrent `wrangler dev` writes fail (SQLITE_BUSY)"];
 
   if (options.path !== undefined) {
     const file = path.resolve(cwd, options.path);
@@ -125,6 +142,7 @@ async function openLocal(options: CliOptions, readOnly: boolean): Promise<Opened
       database: name,
       source: { label: "file", value: displayPath(file, cwd) },
       drivers: [driver],
+      notes,
     };
   }
 
@@ -138,7 +156,7 @@ async function openLocal(options: CliOptions, readOnly: boolean): Promise<Opened
   const config = parseConfig(found.path);
   const where = `${displayPath(config.path, cwd)}${options.env ? ` [env.${options.env}]` : ""}`;
   const binding = await pickBinding(selectBindings(config, options.env), options.db, {
-    tty: Boolean(process.stdin.isTTY && process.stdout.isTTY),
+    tty,
     source: where,
   });
   const persistDir = resolvePersistDir({
@@ -162,7 +180,13 @@ async function openLocal(options: CliOptions, readOnly: boolean): Promise<Opened
 
   if (target.kind === "file") {
     const driver = await LocalDriver.open(target.path, { readOnly });
-    return { session: readySession(driver, database), database: label, source, drivers: [driver] };
+    return {
+      session: readySession(driver, database),
+      database: label,
+      source,
+      drivers: [driver],
+      notes,
+    };
   }
 
   const drivers: Driver[] = [];
@@ -171,6 +195,7 @@ async function openLocal(options: CliOptions, readOnly: boolean): Promise<Opened
     database: `${label}: no file matched; pick one of ${target.candidates.length} in the studio`,
     source,
     drivers,
+    notes,
     openCandidate: async (candidate) => {
       const driver = await LocalDriver.open(candidate.path, { readOnly });
       drivers.push(driver);

@@ -6,6 +6,8 @@ export interface BannerInfo {
   readOnly: boolean;
   /** `database` line, already formatted. */
   database: string;
+  /** Remote: the Cloudflare account and where the token came from. */
+  account?: string;
   /** `config` (or `file`) line. */
   source?: { label: "config" | "file"; value: string };
   url: string;
@@ -27,6 +29,7 @@ export function formatBanner(info: BannerInfo): string {
     row("mode", `${info.mode} (${access})`),
     row("database", info.database),
   ];
+  if (info.account) lines.push(row("account", info.account));
   if (info.source) lines.push(row(info.source.label, info.source.value));
   lines.push(row("studio", color("cyan", info.url)));
   if (info.devUrl) lines.push(row("dev", color("cyan", info.devUrl)));

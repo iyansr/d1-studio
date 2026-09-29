@@ -1,6 +1,6 @@
 import { RemoteDriver } from "../../src/drivers/remote";
 import { openSqlite, type SqliteConn } from "../../src/local/sqlite";
-import { D1Client, type D1RawResult } from "../../src/remote/client";
+import { type Account, D1Client, type D1Database, type D1RawResult } from "../../src/remote/client";
 import { Secret } from "../../src/remote/secret";
 import { splitStatements } from "../../src/sql/split";
 import { type Canned, stubFetch } from "./stub";
@@ -12,15 +12,66 @@ export const FAKE_TARGET = { accountId: "acc-fake", databaseId: "db-fake" };
  * The D1 `raw` endpoint over a local SQLite file, so RemoteDriver can run the
  * same suites as LocalDriver. Response shapes follow `docs/notes/d1-rest.md`.
  */
-export async function fakeD1(file: string, options: { readOnly?: boolean } = {}) {
+export const FAKE_ACCOUNT = { id: FAKE_TARGET.accountId, name: "Fake Co" };
+export const FAKE_DATABASE: D1Database = {
+  uuid: FAKE_TARGET.databaseId,
+  name: "fake-db",
+  created_at: "2025-03-14T09:26:53.589Z",
+};
+
+const envelope = (result: unknown, extra: object = {}) => ({
+  success: true,
+  errors: [],
+  messages: [],
+  result,
+  ...extra,
+});
+const failure = (status: number, code: number, message: string): Canned => ({
+  status,
+  body: { success: false, errors: [{ code, message }], messages: [], result: null },
+});
+
+export interface FakeOptions {
+  readOnly?: boolean;
+  accounts?: Account[];
+  /** Listed by the account; only `FAKE_DATABASE` can be queried. */
+  databases?: D1Database[];
+}
+
+/**
+ * The D1 REST API over a local SQLite file, so RemoteDriver can run the same
+ * suites as LocalDriver. Shapes follow `docs/notes/d1-rest.md`. Requests
+ * without `Bearer FAKE_TOKEN` get a 401.
+ */
+export async function fakeD1(file: string, options: FakeOptions = {}) {
   const conn = await openSqlite(file, { readOnly: false });
+  const accounts = options.accounts ?? [FAKE_ACCOUNT];
+  const databases = options.databases ?? [FAKE_DATABASE];
   const stub = stubFetch((req): Canned => {
-    if (req.method !== "POST" || !req.url.pathname.endsWith("/raw")) {
-      return {
-        status: 404,
-        body: { success: false, errors: [{ code: 7404, message: "Not found" }] },
-      };
+    if (req.headers.get("authorization") !== `Bearer ${FAKE_TOKEN}`) {
+      return failure(401, 10001, "Unable to authenticate request");
     }
+    const parts = req.url.pathname
+      .replace(/^\/client\/v4\//, "")
+      .split("/")
+      .map(decodeURIComponent);
+    if (req.method === "GET" && parts.length === 1 && parts[0] === "accounts") {
+      return { status: 200, body: envelope(accounts, { result_info: page(accounts.length) }) };
+    }
+    const [, account, d1, database, id, raw] = parts;
+    if (account !== FAKE_TARGET.accountId || d1 !== "d1" || database !== "database") {
+      return failure(404, 7404, "Not found");
+    }
+    if (req.method === "GET" && id === undefined) {
+      return { status: 200, body: envelope(databases, { result_info: page(databases.length) }) };
+    }
+    const db = databases.find((d) => d.uuid === id);
+    if (!db) return failure(404, 7404, "The database could not be found");
+    if (req.method === "GET" && raw === undefined) return { status: 200, body: envelope(db) };
+    if (req.method !== "POST" || raw !== "raw" || id !== FAKE_TARGET.databaseId) {
+      return failure(404, 7404, "Not found");
+    }
+
     const body = req.body as {
       sql?: string;
       params?: unknown[];
@@ -30,19 +81,18 @@ export async function fakeD1(file: string, options: { readOnly?: boolean } = {})
       const result = body.batch
         ? runBatch(conn, body.batch)
         : runSql(conn, body.sql ?? "", body.params);
-      return { status: 200, body: { success: true, errors: [], messages: [], result } };
+      return { status: 200, body: envelope(result) };
     } catch (err) {
       const message = `${err instanceof Error ? err.message : String(err)}: SQLITE_ERROR`;
-      return {
-        status: 400,
-        body: { success: false, errors: [{ code: 7500, message }], result: [] },
-      };
+      return failure(400, 7500, message);
     }
   });
   const client = new D1Client({ token: new Secret(FAKE_TOKEN), fetch: stub.fetch });
   const driver = new RemoteDriver(client, FAKE_TARGET, options.readOnly ?? false);
-  return { driver, requests: stub.requests, close: () => conn.close() };
+  return { driver, fetch: stub.fetch, requests: stub.requests, close: () => conn.close() };
 }
+
+const page = (n: number) => ({ page: 1, per_page: 100, count: n, total_count: n });
 
 function runSql(conn: SqliteConn, sql: string, params: unknown[] = []): D1RawResult[] {
   return splitStatements(sql).map((s, i) => execute(conn, s.sql, i === 0 ? params : []));
