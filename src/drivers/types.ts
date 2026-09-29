@@ -3,6 +3,12 @@ import type { Cell, ParamValue } from "../shared/values";
 export interface Stmt {
   sql: string;
   params?: ParamValue[];
+  /**
+   * The rows this statement must change. A driver that can abort a batch
+   * inside its transaction does so with a `ConflictError`; one that can't
+   * (remote) leaves the check to the caller, which reads `changes`.
+   */
+  expectChanges?: number;
 }
 
 export interface QueryResult {

@@ -180,7 +180,7 @@ export function buildRowsQuery(schema: TableSchema, params: RowsParams): RowsQue
 }
 
 /** `rowid`, unless a real column shadows it; then `_rowid_` or `oid`. */
-function rowidName(schema: TableSchema): string | undefined {
+export function rowidName(schema: TableSchema): string | undefined {
   const names = new Set(schema.columns.map((c) => c.name.toLowerCase()));
   return ["rowid", "_rowid_", "oid"].find((alias) => !names.has(alias));
 }
