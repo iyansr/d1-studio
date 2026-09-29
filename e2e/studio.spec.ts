@@ -28,7 +28,11 @@ test.describe("data", () => {
     const users = grid(page, "users rows");
     await expect(footer(page)).toContainText("Rows 1–50 of 240");
 
-    await users.getByRole("columnheader", { name: /^email/ }).getByRole("button").first().click();
+    await users
+      .getByRole("columnheader", { name: /^email/ })
+      .getByRole("button")
+      .first()
+      .click();
     await expect(page).toHaveURL(/sort=email%3Aasc/);
     await expect(users.locator('[data-cell="0:1"]')).toHaveText("user100@example.com");
 
@@ -72,7 +76,9 @@ test("the Structure tab shows the DDL", async ({ page }) => {
   await open(page, "?table=sessions&tab=structure");
   await expect(page.getByText("sessions_live")).toBeVisible();
   await expect(page.getByText("expires_at IS NOT NULL")).toBeVisible();
-  await expect(page.getByLabel("CREATE statement for sessions")).toContainText("CREATE TABLE sessions");
+  await expect(page.getByLabel("CREATE statement for sessions")).toContainText(
+    "CREATE TABLE sessions",
+  );
 });
 
 test.describe("SQL", () => {
@@ -104,7 +110,9 @@ test.describe("needs-db", () => {
   test.use({ project: "unmatched" });
 
   test("picks a local file when none matches the binding", async ({ page }) => {
-    await expect(page.getByRole("alert").first()).toContainText("Couldn't match binding DB to a local file.");
+    await expect(page.getByRole("alert").first()).toContainText(
+      "Couldn't match binding DB to a local file.",
+    );
     const cards = page.getByRole("list", { name: "Local database files" }).getByRole("listitem");
     await expect(cards).toHaveCount(2);
     await page.getByRole("button", { name: /users, sessions/ }).click();

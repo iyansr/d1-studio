@@ -19,7 +19,10 @@ for (const colorScheme of ["light", "dark"] as const) {
     test.use({ colorScheme });
 
     test("data tab, with a filter", async ({ page }) => {
-      await open(page, `?table=users&f=${encodeURIComponent('[{"col":"score","op":"gt","value":10}]')}`);
+      await open(
+        page,
+        `?table=users&f=${encodeURIComponent('[{"col":"score","op":"gt","value":10}]')}`,
+      );
       await expect(footer(page)).toContainText("Rows 1–50");
       await expectNoViolations(page);
     });
@@ -72,7 +75,9 @@ async function tabTo(page: Page, matches: (el: Element) => boolean, shift = fals
   throw new Error("Focus never reached the target");
 }
 
-test("keyboard only: open, sort, filter, page, Structure, run a query, read the error", async ({ page }) => {
+test("keyboard only: open, sort, filter, page, Structure, run a query, read the error", async ({
+  page,
+}) => {
   // Open a table from the sidebar.
   await page.locator("body").press("/");
   await page.keyboard.type("users");
@@ -126,5 +131,7 @@ test("keyboard only: open, sort, filter, page, Structure, run a query, read the 
   await tabTo(page, (el) => el.getAttribute("aria-label") === "SQL editor");
   await page.keyboard.type("SELECT * FROM nope");
   await page.keyboard.press("ControlOrMeta+Enter");
-  await expect(page.getByRole("alert").filter({ hasText: "failed" })).toContainText("no such table: nope");
+  await expect(page.getByRole("alert").filter({ hasText: "failed" })).toContainText(
+    "no such table: nope",
+  );
 });

@@ -12,7 +12,10 @@ interface Options {
 }
 
 /** Starts `node dist/cli.js --no-open --port 0` and reads the token URL from stdout. */
-async function startStudio(project: string, args: string[]): Promise<{ child: ChildProcess; url: string }> {
+async function startStudio(
+  project: string,
+  args: string[],
+): Promise<{ child: ChildProcess; url: string }> {
   const child = spawn(process.execPath, [cli, "--no-open", "--port", "0", ...args], {
     cwd: path.join(root, "e2e", "fixtures", project),
     env: { ...process.env, NO_COLOR: "1" },
