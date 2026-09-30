@@ -107,3 +107,5 @@ Run each of these against a disposable database and record the result here:
 5. `Retry-After` on a real 429.
 6. `SELECT … FROM pragma_table_info('t')`, and the error returned for `SELECT * FROM _cf_KV`.
 7. An empty result through `raw`: are `columns` still present?
+8. Plan 04: does a `{ batch }` whose 3rd statement fails leave the database unchanged? (`pnpm test:live`, "grid edits".)
+9. Plan 04: is `{ $int: "9007199254740993" }`, sent as a string, stored as an INTEGER key? (`pnpm test:live`.)

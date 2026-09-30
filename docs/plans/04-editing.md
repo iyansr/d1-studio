@@ -152,3 +152,28 @@ The flow depends on the mode:
   - JSON editor validation
   - the beforeunload guard
 - **Playwright (remote write UI)** against a server started with a fake RemoteDriver through a test-only factory hook. It covers the dialog lists the SQL, typing the name for DROP from the editor, and Retry after a mocked 429.
+
+---
+
+## Status (2026-09-30)
+
+T1–T8 are implemented. Unit and server tests cover the compiler, the confirmation rules (mode × readOnly × dangerous), local rollback and conflict, read-only 403, and remote 409/403 through a mocked driver. Playwright covers local editing (19 specs), remote write mode over a fake D1 API (7 specs) and axe scans of the new states in both colour schemes.
+
+**Still open**
+
+- **Remote atomicity and `$int` binding are unproven.** `docs/notes/d1-rest.md` says a `{ batch }` body is one transaction, and the fake D1 API behaves that way, but nothing has run against real D1. `pnpm test:live` now has the checks (a batch whose 3rd op fails leaves the database unchanged, a missing row is a warning, `{ $int }` as a key), and has never been run. Run it against a throwaway account before v1.0.
+- **Pre-existing e2e failures.** On the untouched baseline (`e2709ef`) these already fail, and still do: `a11y.spec.ts` "SQL tab" (light and dark, a CodeMirror autocomplete popup flagged by axe) and "keyboard only" (the Select trigger's text is `score▼`, not `score`), and `studio.spec.ts` "FK icon tooltip", "opens a table, sorts…", "needs-db picker" and the 100k-row perf budget.
+- **UI bundle over budget.** `pnpm check:size` reports 1.41 MB against 1.20 MB. It was already 1.36 MB at baseline; this plan added about 50 KB.
+
+**Deviations**
+
+- **T1:** the page's key descriptor in `shared/rows.ts` was renamed `RowsKey`, so `RowKey` is the op-side type from the plan.
+- **T2:** `compileEdits` returns `EditStmt[]`, which is `Stmt` plus `opIndex` and `op`, because ops are reordered and the UI needs the staged row behind a failing statement. `Stmt` gained `expectChanges`.
+- **T3:** errors keep the existing envelope, `{ error: { message, code, statementIndex, opIndex } }` with `code` `conflict`, `confirmation_required` or `confirmation_mismatch`, and a `preview` next to it, instead of `{ error: "conflict" }`. `confirm` is `true` for a click or the database name. Each previewed statement also carries `dangerous`, so the dialog can badge it. A batch is capped at 1,000 ops.
+- **T3:** a grid delete or update always has `WHERE`, so a compiled batch is never dangerous. The wrong-name 403 is tested through `/api/query` and the rule table, not `/api/batch`.
+- **T3:** the remote row-count cache is patched from each batch's inserts and deletes, so the sidebar stays exact without recounting (D9).
+- **T3:** system tables shown through the sidebar toggle can be edited, like anything the SQL editor can reach.
+- **T5:** `deletes` is a `Map` (id to row key), because the ops need the key. Stores live in a registry, so staged changes outlive the grid. Browser Back and Forward can change the table without asking; the changes stay staged.
+- **T6:** cells edited inside an inserted row don't add to N: the row is the change. `Ctrl/Cmd+Shift+N` for Set NULL is reserved by some browsers (Chrome opens an incognito window), so the button and the cell menu are the reliable routes. After a conflict the page isn't refetched, so the marked row stays visible; Discard or "Revert change" clears it. Blur commits a valid edit. The shadcn `--destructive` token is darker in light mode and lighter in dark mode, to reach AA on its own tint.
+- **T7:** a failed run shows in the dialog, beside the SQL, and gets a Retry only for 429 (refused before it ran). Other write failures may have gone through, so a blind retry could apply twice.
+- **T8:** the remote-write Playwright specs start the studio in the test process (`createApp` over the fake D1 API) instead of adding a test-only hook to the shipped CLI.
