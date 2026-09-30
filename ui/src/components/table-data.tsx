@@ -1,3 +1,4 @@
+import type { BatchResponse, Confirm, EditOp, WritePreview } from "@shared/edits";
 import {
   type Filter,
   PAGE_SIZES,
@@ -5,9 +6,18 @@ import {
   ROWID_COLUMN,
   type RowsColumn,
 } from "@shared/rows";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeftIcon, ChevronRightIcon, EyeIcon, RefreshCwIcon, TableIcon } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  EyeIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  TableIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { ErrorAlert } from "@/components/error-alert";
 import { FilterBadges, FilterBuilder } from "@/components/filter-builder";
 import { Button } from "@/components/ui/button";
@@ -21,13 +31,19 @@ import {
 } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { DataGrid } from "@/grid/DataGrid";
-import { queries, type RowsRequest } from "@/lib/api";
+import { WriteConfirmDialog } from "@/edits/confirm-dialog";
+import { EditToolbar, SqlPreviewSheet } from "@/edits/edit-toolbar";
+import { identifyRow } from "@/edits/row-key";
+import { isInsertId } from "@/edits/staged-edits";
+import { useStagedEdits } from "@/edits/useStagedEdits";
+import { DataGrid, type GridEditing } from "@/grid/DataGrid";
+import { ApiError, api, type Meta, queries, type RowsRequest } from "@/lib/api";
 import { formatCount } from "@/lib/format";
 import { useUrlState } from "@/lib/url-state";
 
 /** The Data tab: server-paged, sorted and filtered rows of one table or view. */
-export function TableData({ table }: { table: string; readOnly: boolean }) {
+export function TableData({ table, meta }: { table: string; meta: Meta }) {
+  const readOnly = meta.readOnly;
   const [url, setUrl] = useUrlState();
   const client = useQueryClient();
   const [hidden, setHidden] = useState<string[]>([]);
@@ -62,6 +78,33 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
   const rows = useQuery(queries.rows(table, request));
   const page = rows.data;
 
+  // Editing (plan 04): staged per table, applied as one transaction.
+  const { store, staged } = useStagedEdits(table);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [confirming, setConfirming] = useState<Pending2 | null>(null);
+  const [sqlPreview, setSqlPreview] = useState<WritePreview | null>(null);
+  const editable = !readOnly && page !== undefined && page.key.kind !== "none";
+  const readonlyColumns = useMemo(
+    () =>
+      new Set(schema.data?.columns.filter((c) => c.generated || c.hidden).map((c) => c.name) ?? []),
+    [schema.data],
+  );
+  const editing = useMemo<GridEditing | undefined>(() => {
+    if (!editable || !page) return undefined;
+    return {
+      store,
+      staged,
+      identify: (row) => identifyRow(page.key, page.columns, row),
+      readonlyColumns,
+      selected,
+      onSelectedChange: setSelected,
+    };
+  }, [editable, page, store, staged, readonlyColumns, selected]);
+  // Selected rows belong to the page they were picked on.
+  const view = JSON.stringify([url.page, url.size, url.sort, url.filters]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: clear when the view changes.
+  useEffect(() => setSelected(new Set()), [view]);
+
   useEffect(() => {
     if (page?.total !== undefined) setTotals((t) => ({ ...t, [filterKey]: page.total as number }));
   }, [page?.total, filterKey]);
@@ -79,6 +122,73 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
     void client.invalidateQueries({ queryKey: ["rows", table] });
     void client.invalidateQueries({ queryKey: ["tables"] });
     setTotals({});
+  };
+
+  const preview = useMutation({
+    mutationFn: (v: Pending & { purpose: "confirm" | "show" }) =>
+      api.batchPreview({ table, ops: v.ops }),
+    onSuccess: (data, v) => {
+      if (v.purpose === "show") setSqlPreview(data);
+      else setConfirming({ preview: data, ops: v.ops, ids: v.ids });
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const send = useMutation({
+    mutationFn: (v: Pending & { confirm?: Confirm }) =>
+      api.batch({ table, ops: v.ops, ...(v.confirm !== undefined && { confirm: v.confirm }) }),
+    onSuccess: (result) => {
+      setConfirming(null);
+      store.discardAll();
+      setSelected(new Set());
+      toast.success(applied(result));
+      if (result.warnings.length > 0) {
+        toast.warning(
+          `${result.warnings.length} ${result.warnings.length === 1 ? "change" : "changes"} matched no row: the row was changed or deleted since it was loaded.`,
+        );
+      }
+      refresh();
+      void client.invalidateQueries({ queryKey: ["table-counts"] });
+      void client.invalidateQueries({ queryKey: ["usage"] });
+    },
+    onError: (error, v) => {
+      void client.invalidateQueries({ queryKey: ["usage"] });
+      const api = error instanceof ApiError ? error : undefined;
+      // The server wants a confirmation we didn't send.
+      if (api?.confirmation) {
+        setConfirming({ preview: api.confirmation, ops: v.ops, ids: v.ids });
+        return;
+      }
+      // Point at the row; the changes stay staged so nothing is lost.
+      const id = api?.detail.opIndex === undefined ? undefined : v.ids[api.detail.opIndex];
+      if (id) store.markFailed(id);
+      // From the confirmation dialog the error shows there, beside the SQL.
+      if (v.confirm === undefined) toast.error(error.message);
+    },
+  });
+  const busy = preview.isPending || send.isPending;
+
+  const apply = () => {
+    const built = store.buildOps();
+    if (built.ops.length === 0) return;
+    store.markFailed(null);
+    // Local runs at once; remote shows the SQL first (T7).
+    if (meta.mode === "remote") preview.mutate({ ...built, purpose: "confirm" });
+    else send.mutate(built);
+  };
+  const showSql = () => preview.mutate({ ...store.buildOps(), purpose: "show" });
+  const discard = () => {
+    store.discardAll();
+    setSelected(new Set());
+  };
+  const deleteSelected = () => {
+    const refs = (page?.rows ?? []).flatMap((row) => {
+      const ref = editing?.identify(row);
+      return ref && selected.has(ref.id) ? [ref] : [];
+    });
+    const inserted = [...selected].filter(isInsertId).map((id) => ({ id }));
+    store.deleteRows([...refs, ...inserted]);
+    setSelected(new Set());
   };
 
   return (
@@ -105,6 +215,27 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
             Show {hidden.length} hidden {hidden.length === 1 ? "column" : "columns"}
           </Button>
         )}
+        {editable && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => store.addRow()}>
+              <PlusIcon data-icon="inline-start" />
+              Add row
+            </Button>
+            {selected.size > 0 && (
+              <Button variant="destructive" size="sm" onClick={deleteSelected}>
+                <Trash2Icon data-icon="inline-start" />
+                Delete {selected.size} {selected.size === 1 ? "row" : "rows"}
+              </Button>
+            )}
+          </div>
+        )}
+        {!readOnly && page && !editable && (
+          <span className="text-xs text-muted-foreground">
+            {schema.data?.type === "view"
+              ? "Views can't be edited."
+              : "No primary key or rowid, so rows can't be edited."}
+          </span>
+        )}
         <Button
           variant="ghost"
           size="icon-sm"
@@ -115,6 +246,15 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
           <RefreshCwIcon />
         </Button>
       </div>
+      {editable && staged.count > 0 && (
+        <EditToolbar
+          count={staged.count}
+          busy={busy}
+          onApply={apply}
+          onDiscard={discard}
+          onShowSql={showSql}
+        />
+      )}
 
       {rows.isError ? (
         <div className="p-4">
@@ -146,6 +286,7 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
             setFilterOpen(true);
           }}
           onAddFilter={(filter) => setFilters([...url.filters, filter])}
+          editing={editing}
           loading={rows.isPending}
           widthsKey={table}
           rowOffset={offset}
@@ -160,6 +301,27 @@ export function TableData({ table }: { table: string; readOnly: boolean }) {
           }
         />
       )}
+
+      <WriteConfirmDialog
+        preview={confirming?.preview ?? null}
+        database={meta.database?.name ?? ""}
+        account={meta.account}
+        atomic
+        running={send.isPending && send.variables?.confirm !== undefined}
+        error={
+          confirming && send.error && !(send.error instanceof ApiError && send.error.confirmation)
+            ? send.error
+            : null
+        }
+        onRun={(confirm) =>
+          confirming && send.mutate({ ops: confirming.ops, ids: confirming.ids, confirm })
+        }
+        onCancel={() => {
+          setConfirming(null);
+          send.reset();
+        }}
+      />
+      <SqlPreviewSheet preview={sqlPreview} onClose={() => setSqlPreview(null)} />
 
       <footer className="flex flex-wrap items-center gap-3 border-t px-3 py-2 text-sm">
         <ToggleGroup
@@ -250,4 +412,26 @@ function NoRows(props: {
       )}
     </Empty>
   );
+}
+
+/** What Apply sends: the ops, and the staged row each came from. */
+interface Pending {
+  ops: EditOp[];
+  ids: string[];
+}
+
+/** The confirmation dialog's state: the SQL to show, and what to send when confirmed. */
+interface Pending2 extends Pending {
+  preview: WritePreview;
+}
+
+const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+
+function applied(result: BatchResponse): string {
+  const parts = [
+    result.updated > 0 && `${plural(result.updated, "row")} updated`,
+    result.inserted > 0 && `${plural(result.inserted, "row")} inserted`,
+    result.deleted > 0 && `${plural(result.deleted, "row")} deleted`,
+  ].filter(Boolean);
+  return `Applied ${plural(result.statements, "change")}: ${parts.join(", ") || "no rows changed"}.`;
 }

@@ -7,6 +7,16 @@ import { SqlView } from "@/components/sql-view";
 import { StructureView } from "@/components/structure-view";
 import { TableData } from "@/components/table-data";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -17,6 +27,7 @@ import {
 } from "@/components/ui/empty";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { stagedFor, useStagedCount, useStagedTotal } from "@/edits/useStagedEdits";
 import { type Meta, queries } from "@/lib/api";
 import { readStored, writeStored } from "@/lib/storage";
 import { type Tab, useUrlState } from "@/lib/url-state";
@@ -36,13 +47,32 @@ export function Studio({ meta }: { meta: Meta }) {
   const known = tables.data?.tables.find((t) => t.name === table);
   const tab: Tab = table ? url.tab : "sql";
 
+  // Staged edits (plan 04-T5): reloading or leaving the table asks first.
+  const stagedHere = useStagedCount(table);
+  const stagedAnywhere = useStagedTotal() > 0;
+  const [leaving, setLeaving] = useState<string | null>(null);
+  useEffect(() => {
+    if (!stagedAnywhere) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      // Some browsers only ask when this is set.
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [stagedAnywhere]);
+  const openTable = (name: string) => {
+    if (name !== table && stagedHere > 0) setLeaving(name);
+    else setUrl({ table: name, page: 0, sort: [], filters: [] });
+  };
+
   return (
     <SidebarProvider className="h-svh">
       <AppSidebar
         tables={tables}
         remote={meta.mode === "remote"}
         active={table}
-        onOpen={(name) => setUrl({ table: name, page: 0, sort: [], filters: [] })}
+        onOpen={openTable}
       />
       <SidebarInset className="min-w-0 overflow-hidden">
         <AppHeader meta={meta} table={table} />
@@ -68,12 +98,10 @@ export function Studio({ meta }: { meta: Meta }) {
           ) : (
             <>
               <TabsContent value="data" className="flex min-h-0 flex-col">
-                {table && <TableData key={table} table={table} readOnly={meta.readOnly} />}
+                {table && <TableData key={table} table={table} meta={meta} />}
               </TabsContent>
               <TabsContent value="structure" className="min-h-0 overflow-auto">
-                {table && (
-                  <StructureView table={table} onOpenTable={(name) => setUrl({ table: name })} />
-                )}
+                {table && <StructureView table={table} onOpenTable={(name) => openTable(name)} />}
               </TabsContent>
             </>
           )}
@@ -82,6 +110,30 @@ export function Studio({ meta }: { meta: Meta }) {
           </TabsContent>
         </Tabs>
       </SidebarInset>
+      <AlertDialog open={leaving !== null} onOpenChange={(open) => !open && setLeaving(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard staged changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {table} has {stagedHere} staged {stagedHere === 1 ? "change" : "changes"} that haven't
+              been applied. Leaving the table discards them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (table) stagedFor(table).discardAll();
+                if (leaving) setUrl({ table: leaving, page: 0, sort: [], filters: [] });
+                setLeaving(null);
+              }}
+            >
+              Discard changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 }
