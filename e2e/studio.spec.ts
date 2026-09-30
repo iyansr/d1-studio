@@ -95,6 +95,24 @@ test.describe("SQL", () => {
     await expect(status).toContainText(/\d ms/);
   });
 
+  test("Tab accepts an open completion, and still moves focus when none is open", async ({
+    page,
+  }) => {
+    await open(page, "?tab=sql");
+    const editor = page.getByRole("textbox", { name: "SQL editor" });
+    await editor.click();
+    await page.keyboard.type("SELECT * FROM ses");
+    await expect(page.getByRole("option", { name: /sessions/ }).first()).toBeVisible();
+    await page.keyboard.press("Tab");
+    await expect(editor).toContainText("SELECT * FROM sessions");
+    await expect(editor).toBeFocused();
+    await expect(page.getByRole("option")).toHaveCount(0);
+
+    // Nothing to accept now: Tab leaves the editor, as before.
+    await page.keyboard.press("Tab");
+    await expect(editor).not.toBeFocused();
+  });
+
   test("shows a bad query's error verbatim", async ({ page }) => {
     await open(page, "?tab=sql");
     await page.getByRole("textbox", { name: "SQL editor" }).click();

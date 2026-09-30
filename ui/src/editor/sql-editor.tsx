@@ -1,4 +1,5 @@
 import {
+  acceptCompletion,
   autocompletion,
   closeBrackets,
   closeBracketsKeymap,
@@ -41,8 +42,8 @@ export function sqlNamespace(tables: SchemaTable[]): SQLNamespace {
 
 /**
  * CodeMirror 6 with SQLite highlighting, schema autocomplete and search
- * (UI-7). Mod-Enter runs; Tab is left to move focus, so keyboard users
- * aren't trapped.
+ * (UI-7). Mod-Enter runs. Tab accepts the open completion; with none open it
+ * is left to move focus, so keyboard users aren't trapped.
  */
 export function SqlEditor(props: {
   initialValue: string;
@@ -79,6 +80,8 @@ export function SqlEditor(props: {
                   return true;
                 },
               },
+              // Returns false with no completion open, so Tab still moves focus.
+              { key: "Tab", run: acceptCompletion },
             ]),
           ),
           lineNumbers(),
