@@ -56,6 +56,52 @@ for (const colorScheme of ["light", "dark"] as const) {
       });
     });
 
+    test.describe("editing", () => {
+      test.use({ project: "editing", cliArgs: [] });
+
+      test("grid with every staged state, and the in-cell editor", async ({ page }) => {
+        await open(page, "?table=users");
+        const users = page.getByRole("grid", { name: "users rows" });
+        await expect(users.locator('[data-cell="0:3"]')).toHaveText("User 1");
+        await users.locator('[data-cell="0:3"]').dblclick();
+        await page.getByRole("textbox", { name: "Edit name" }).fill("Changed");
+        await page.keyboard.press("Enter");
+        await users.getByRole("checkbox", { name: "Select row 3" }).click();
+        await page.getByRole("button", { name: "Delete 1 row" }).click();
+        await page.getByRole("button", { name: "Add row" }).click();
+        await expect(users.locator("[data-row-state]")).toHaveCount(2);
+        await expectNoViolations(page);
+
+        // Row 2 (after the pinned new row): the age column has a number editor.
+        await users.locator('[data-cell="2:4"]').dblclick();
+        await expect(page.getByRole("spinbutton", { name: "Edit age" })).toBeVisible();
+        await expectNoViolations(page);
+      });
+
+      test("expand editor with invalid JSON", async ({ page }) => {
+        await open(page, "?table=users");
+        const users = page.getByRole("grid", { name: "users rows" });
+        await users.locator('[data-cell="0:6"]').dblclick();
+        const sheet = page.getByRole("dialog", { name: "prefs" });
+        await sheet.getByRole("textbox", { name: "prefs value" }).click();
+        await page.keyboard.press("ControlOrMeta+End");
+        await page.keyboard.type("oops");
+        await expect(sheet.getByRole("alert")).toBeVisible();
+        await expectNoViolations(page);
+      });
+
+      test("leave guard", async ({ page }) => {
+        await open(page, "?table=users");
+        const users = page.getByRole("grid", { name: "users rows" });
+        await users.locator('[data-cell="0:3"]').dblclick();
+        await page.getByRole("textbox", { name: "Edit name" }).fill("Changed");
+        await page.keyboard.press("Enter");
+        await page.locator("[data-table-item]", { hasText: "notes" }).click();
+        await expect(page.getByRole("alertdialog")).toBeVisible();
+        await expectNoViolations(page);
+      });
+    });
+
     test.describe("needs-db", () => {
       test.use({ project: "unmatched" });
       test("picker", async ({ page }) => {

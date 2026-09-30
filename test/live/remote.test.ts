@@ -80,6 +80,25 @@ describe.skipIf(!live)("live D1", () => {
       });
   }
 
+  /** POSTs JSON to the studio app over the live driver, as the UI would. */
+  function post(driver: RemoteDriver, path: string, body: unknown) {
+    const ctx: AppContext = {
+      version: "live",
+      mode: "remote",
+      readOnly: driver.readOnly,
+      token: "t",
+      bind: { host: "127.0.0.1", port: PORT },
+      uiDir: ".",
+      session: readySession(driver, { name: "live", binding: null, id: databaseId }),
+      notices: [],
+    };
+    return createApp(ctx).request(`${ORIGIN}${path}`, {
+      method: "POST",
+      headers: { Cookie: `d1s_${PORT}=t`, Origin: ORIGIN, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
   describe("read", () => {
     test("rows, BLOBs and D1 meta", async () => {
       const [result] = await reader.query("SELECT n, label, data FROM big WHERE n = 1");
@@ -142,6 +161,87 @@ describe.skipIf(!live)("live D1", () => {
       ).rejects.toThrow();
       const [row] = await reader.query("SELECT count(*) FROM child WHERE id = 3");
       expect(row?.rows[0]?.[0]).toBe(0);
+    });
+  });
+
+  describe("grid edits (plan 04)", () => {
+    const row = (rowid: number) => ({ kind: "rowid", rowid }) as const;
+    const childIds = async () =>
+      (await reader.query("SELECT id FROM child ORDER BY id"))[0]?.rows.map((r) => r[0]);
+
+    test("a batch without a confirmation is refused with the SQL, and runs nothing", async () => {
+      const before = await childIds();
+      const res = await post(writer, "/api/batch", {
+        table: "child",
+        ops: [{ op: "insert", values: { id: 100, big_n: 1 } }],
+      });
+      expect(res.status).toBe(409);
+      expect(((await res.json()) as { error: { code: string } }).error.code).toBe(
+        "confirmation_required",
+      );
+      expect(await childIds()).toEqual(before);
+    });
+
+    test("a batch whose 3rd op fails leaves the database unchanged (S1 atomicity)", async () => {
+      const before = await childIds();
+      const res = await post(writer, "/api/batch", {
+        table: "child",
+        confirm: true,
+        ops: [
+          { op: "insert", values: { id: 200, big_n: 1 } },
+          { op: "insert", values: { id: 201, big_n: 1 } },
+          // Primary key clash with a row that exists.
+          { op: "insert", values: { id: 1, big_n: 1 } },
+        ],
+      });
+      expect(res.status).toBe(400);
+      expect(await childIds()).toEqual(before);
+    });
+
+    test("applies inserts, updates and deletes in one batch", async () => {
+      const res = await post(writer, "/api/batch", {
+        table: "child",
+        confirm: true,
+        ops: [
+          { op: "insert", values: { id: 300, big_n: 5 } },
+          { op: "update", key: row(1), set: { big_n: 7 } },
+          { op: "delete", key: row(2) },
+        ],
+      });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({ inserted: 1, updated: 1, deleted: 1, warnings: [] });
+      const [rows] = await reader.query(
+        "SELECT id, big_n FROM child WHERE id IN (1, 2, 300) ORDER BY id",
+      );
+      expect(rows?.rows).toEqual([
+        [1, 7],
+        [300, 5],
+      ]);
+    });
+
+    test("D1 can't abort on a row count, so a missing row is a warning (S1)", async () => {
+      const res = await post(writer, "/api/batch", {
+        table: "child",
+        confirm: true,
+        ops: [{ op: "update", key: row(99999), set: { big_n: 1 } }],
+      });
+      expect(res.status).toBe(200);
+      expect(((await res.json()) as { warnings: unknown[] }).warnings).toHaveLength(1);
+    });
+
+    test("64-bit integers: how the REST API binds a $int (S1)", async () => {
+      const res = await post(writer, "/api/batch", {
+        table: "child",
+        confirm: true,
+        ops: [{ op: "insert", values: { id: { $int: "9007199254740993" }, big_n: 1 } }],
+      });
+      expect(res.status).toBe(200);
+      const [result] = await reader.query(
+        "SELECT CAST(id AS TEXT), typeof(id) FROM child WHERE id > 9007199254740000",
+      );
+      // Records the answer for docs/notes/d1-rest.md: text is coerced by the INTEGER key, or not.
+      console.info("D1 REST stored a $int key as", result?.rows[0]);
+      expect(result?.rows[0]).toEqual(["9007199254740993", "integer"]);
     });
   });
 });
