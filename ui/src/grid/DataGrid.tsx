@@ -1000,7 +1000,7 @@ export function DataGrid(props: DataGridProps) {
 /** Edge and tint per staged row state (semantic tokens, 02-T1). */
 const ROW_STATE_CELL: Record<RowState, string> = {
   inserted: "bg-inserted/10",
-  deleted: "text-muted-foreground line-through opacity-60",
+  deleted: "text-muted-foreground line-through",
   failed: "bg-destructive/10",
 };
 const ROW_STATE_EDGE: Record<RowState, string> = {
@@ -1053,7 +1053,7 @@ function GridCell(props: {
   if (props.placeholder) {
     return (
       <TableCell {...cellProps}>
-        <span className="text-muted-foreground italic">DEFAULT</span>
+        <span className="text-foreground/70 italic">DEFAULT</span>
       </TableCell>
     );
   }
