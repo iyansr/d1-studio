@@ -1,5 +1,11 @@
 # @iyansr/d1-studio
 
+## 1.0.1
+
+### Patch Changes
+
+- [`1734347`](https://github.com/iyansr/d1-studio/commit/1734347941a969c43ab69617b8a19cdf8fdda4dd) Thanks [@iyansr](https://github.com/iyansr)! - Minify the CLI bundle (`dist/cli.js` drops from 392 KB to 190 KB), and refresh the README with badges, a screenshot and a table of contents.
+
 ## 1.0.0
 
 ### Major Changes
