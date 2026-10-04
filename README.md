@@ -6,7 +6,6 @@ A zero-config browser studio for Cloudflare D1, local or remote. One command, no
 npx @iyansr/d1-studio
 ```
 
-
 Run it inside any Wrangler project. d1-studio reads your existing `wrangler.json`, `wrangler.jsonc` or `wrangler.toml` and your Wrangler login, starts a small server on `127.0.0.1`, and opens the studio in your browser.
 
 - **Browse:** tables and views with row counts, a virtualized grid with paging, sorting and per-column filters, and a schema view (columns, indexes, foreign keys, `CREATE` statement).
