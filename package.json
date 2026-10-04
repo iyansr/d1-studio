@@ -38,7 +38,8 @@
     "format:check": "oxfmt --check",
     "changeset": "changeset",
     "version-packages": "changeset version && oxfmt",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "demo": "node --experimental-strip-types scripts/demo.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

@@ -32,7 +32,7 @@
   - "no local DB found"
   - multiple accounts
   - integer precision on remote
-- Record the GIF with `vhs` from a checked-in `.tape` file so it can be re-recorded.
+- Record the GIF from a checked-in script so it can be re-recorded: `pnpm demo` (`scripts/demo.ts`) builds a demo project, drives the built studio with Playwright, records video and converts it to `docs/demo.gif` with ffmpeg. (Deviation: `vhs` records only the terminal, and the product is the browser UI.)
 
 ## T2 — Packaging (S)
 
@@ -99,3 +99,5 @@ The npx install time is out of scope for these numbers; D7 keeps it small.
 ## Status
 
 - 2026-10-04: changesets set up (T2 versioning, D14). `release.yml` not written yet; T1, T3–T6 open.
+- 2026-10-04: T1 README written (all listed sections), MIT `LICENSE` added, `repository`/`homepage`/`bugs` set. Demo GIF recorded with `pnpm demo` (Playwright + ffmpeg, not `vhs`); T1 done.
+- 2026-10-04: `.github/workflows/release.yml` written per T2 (changesets action, OIDC, `npm i -g npm@latest`). Still open: trusted publisher on npmjs.com, OIDC through `changeset publish` under pnpm unverified, tarball smoke step.

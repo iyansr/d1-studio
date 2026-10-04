@@ -8,3 +8,4 @@ test/fixtures/**/.wrangler/state/
 e2e/fixtures/**/.wrangler/
 /test-results/
 /playwright-report/
+.refs
