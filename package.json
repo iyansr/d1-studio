@@ -1,6 +1,6 @@
 {
   "name": "@iyansr/d1-studio",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zero-config studio for Cloudflare D1, local or remote",
   "homepage": "https://github.com/iyansr/d1-studio#readme",
   "bugs": {
