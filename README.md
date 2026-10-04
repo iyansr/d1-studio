@@ -11,6 +11,7 @@ A zero-config browser studio for Cloudflare D1, local or remote. One command, no
 [![Bun](https://img.shields.io/badge/Bun-supported-fbf0df?logo=bun&logoColor=black)](https://bun.sh)
 [![Cloudflare D1](https://img.shields.io/badge/Cloudflare-D1-f38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/d1/)
 [![License: MIT](https://img.shields.io/github/license/iyansr/d1-studio)](LICENSE)
+[![Sponsor](https://img.shields.io/github/sponsors/iyansr?logo=githubsponsors&logoColor=white&label=Sponsor&color=ea4aaa)](https://github.com/sponsors/iyansr)
 
 ![d1-studio screenshot](https://raw.githubusercontent.com/iyansr/d1-studio/main/assets/banner.webp)
 
