@@ -1,6 +1,20 @@
+<div align="center">
+
 # d1-studio
 
 A zero-config browser studio for Cloudflare D1, local or remote. One command, no ORM, no schema file.
+
+[![npm version](https://img.shields.io/npm/v/@iyansr/d1-studio?logo=npm&color=cb3837)](https://www.npmjs.com/package/@iyansr/d1-studio)
+[![npm downloads](https://img.shields.io/npm/dm/@iyansr/d1-studio?logo=npm)](https://www.npmjs.com/package/@iyansr/d1-studio)
+[![CI](https://github.com/iyansr/d1-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/iyansr/d1-studio/actions/workflows/ci.yml)
+[![Node](https://img.shields.io/node/v/@iyansr/d1-studio?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![Bun](https://img.shields.io/badge/Bun-supported-fbf0df?logo=bun&logoColor=black)](https://bun.sh)
+[![Cloudflare D1](https://img.shields.io/badge/Cloudflare-D1-f38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/d1/)
+[![License: MIT](https://img.shields.io/github/license/iyansr/d1-studio)](LICENSE)
+
+![d1-studio screenshot](https://raw.githubusercontent.com/iyansr/d1-studio/main/assets/banner.webp)
+
+</div>
 
 ```bash
 npx @iyansr/d1-studio
@@ -8,13 +22,33 @@ npx @iyansr/d1-studio
 
 Run it inside any Wrangler project. d1-studio reads your existing `wrangler.json`, `wrangler.jsonc` or `wrangler.toml` and your Wrangler login, starts a small server on `127.0.0.1`, and opens the studio in your browser.
 
+## 📑 Table of contents
+
+- [✨ Features](#-features)
+- [📋 Requirements](#-requirements)
+- [🚀 Quick start](#-quick-start)
+  - [Local](#local)
+  - [Remote](#remote)
+- [⚙️ Options](#️-options)
+- [🔍 How it finds your database](#-how-it-finds-your-database)
+- [🔑 Remote authentication](#-remote-authentication)
+  - [Creating a scoped API token](#creating-a-scoped-api-token)
+  - [Large integers in remote mode](#large-integers-in-remote-mode)
+- [🛡️ Safety](#️-safety)
+- [🔒 Security](#-security)
+- [🩺 Troubleshooting](#-troubleshooting)
+- [🛠️ Development](#️-development)
+- [📄 License](#-license)
+
+## ✨ Features
+
 - **Browse:** tables and views with row counts, a virtualized grid with paging, sorting and per-column filters, and a schema view (columns, indexes, foreign keys, `CREATE` statement).
 - **Query:** a SQL editor with SQLite highlighting, table and column autocomplete, and `Ctrl/Cmd+Enter` to run. Engine errors are shown verbatim.
 - **Edit:** change cells, add and delete rows. Changes are staged, previewed as the exact SQL, and applied in one batch.
 - **Local and remote:** the same UI for the Miniflare SQLite file under `.wrangler/state` and for deployed D1 over the Cloudflare API.
 - **Safe by default:** remote is read-only unless you pass `--write`, and the server enforces it, not just the UI.
 
-## Requirements
+## 📋 Requirements
 
 - Node.js `>=22.16` (uses the built-in `node:sqlite`), or Bun.
 - macOS, Linux or Windows.
@@ -22,7 +56,7 @@ Run it inside any Wrangler project. d1-studio reads your existing `wrangler.json
 
 Nothing else is installed: the package has no runtime dependencies.
 
-## Quick start
+## 🚀 Quick start
 
 ### Local
 
@@ -53,7 +87,7 @@ With no Wrangler config (or no D1 bindings in it), `--remote` lists the account'
 
 With Bun, use `bunx @iyansr/d1-studio`. To install it globally, run `npm i -g @iyansr/d1-studio` and then `d1-studio`.
 
-## Options
+## ⚙️ Options
 
 ```text
 d1-studio [path] [options]
@@ -71,7 +105,7 @@ d1-studio [path] [options]
 | `--write` / `--no-write` | on for local, off for remote | Allow edits, or open read-only.                                    |
 | `-y`, `--yes`            | off                          | Skip the remote `--write` confirmation (for non-interactive runs). |
 | `-p`, `--port <n>`       | `4101`                       | Port for the studio server.                                        |
-| `--host <addr>`          | `127.0.0.1`                  | Bind address. See [Security](#security).                           |
+| `--host <addr>`          | `127.0.0.1`                  | Bind address. See [Security](#-security).                          |
 | `--no-open`              |                              | Don't open the browser.                                            |
 | `-h`, `--help`           |                              | Show help.                                                         |
 | `-v`, `--version`        |                              | Show the version.                                                  |
@@ -82,14 +116,14 @@ d1-studio [path] [options]
 D1_STUDIO_PORT=8080 npx @iyansr/d1-studio --remote
 ```
 
-## How it finds your database
+## 🔍 How it finds your database
 
 1. **Config.** From the current directory upwards: `wrangler.json`, then `wrangler.jsonc`, then `wrangler.toml` (Wrangler's own order). A `.wrangler/deploy/config.json` redirect, as written by the Cloudflare Vite plugin, is followed.
 2. **Binding.** `d1_databases` from the config, or `env.<name>.d1_databases` with `--env`. One binding is used as is; with several, you pick one in the terminal or pass `--db`.
 3. **Local file.** Miniflare names each database file after a hash of its ID. d1-studio reproduces that name from `preview_database_id`, then `database_id`, then the binding name, the same order Wrangler uses, and opens the file under `<persist-to>/v3/d1/miniflare-D1DatabaseObject/`.
 4. **Remote database.** The binding's `database_id`, looked up through the D1 API.
 
-## Remote authentication
+## 🔑 Remote authentication
 
 The API token is found in this order:
 
@@ -118,7 +152,7 @@ npx @iyansr/d1-studio --remote
 
 The D1 API returns integers as JSON numbers, so values beyond ±2^53 (9,007,199,254,740,991) arrive already rounded. d1-studio can't recover them. Local mode reads them exactly.
 
-## Safety
+## 🛡️ Safety
 
 - **Read-only by default for remote.** Without `--write`, the server accepts only `SELECT`, `WITH … SELECT`, `VALUES`, `EXPLAIN` and read-only `PRAGMA`s, and rejects everything else with 403. The check runs on the server for every statement, whatever the UI sends. Local `--no-write` also opens the SQLite file read-only.
 - **Remote `--write` asks first.** Before the server starts, the CLI shows the account and database and asks you to type the database name. In a non-interactive run it exits unless you also pass `--yes`.
@@ -126,7 +160,7 @@ The D1 API returns integers as JSON numbers, so values beyond ±2^53 (9,007,199,
 - **Grid edits aren't raw SQL.** The browser sends structured changes (update, insert, delete with the row's key), and the server builds parameterized SQL from them with identifiers checked against the schema. If a row changed underneath you, the batch is rolled back and the studio tells you.
 - **Auto-LIMIT for remote queries.** D1 bills per row read, so an unbounded `SELECT` typed into the SQL editor in remote mode gets `LIMIT 1000` added, and the result shows a notice when it was cut off. Add your own `LIMIT` to override it. Remote row counts in the sidebar also load lazily and are cached for the session.
 
-## Security
+## 🔒 Security
 
 The studio exposes your database over HTTP, so it is locked to the person who started it:
 
@@ -136,7 +170,7 @@ The studio exposes your database over HTTP, so it is locked to the person who st
 - **Your Cloudflare token stays in the process.** It is held in memory, sent only to `api.cloudflare.com`, and never written to disk, logged, included in error messages or sent to the browser.
 - **No telemetry.**
 
-## Troubleshooting
+## 🩺 Troubleshooting
 
 **Running alongside `wrangler dev`.** You can keep `wrangler dev` running. The studio and your Worker share the SQLite file safely and see each other's changes right away. While the studio is writing, a Worker write that happens at the same moment can fail with `SQLITE_BUSY`, because workerd doesn't wait for locks. Retry it, or use `--no-write` while testing. Browsing never causes this.
 
@@ -152,7 +186,7 @@ The studio exposes your database over HTTP, so it is locked to the person who st
 
 **Wrong integers in remote mode.** See [Large integers in remote mode](#large-integers-in-remote-mode).
 
-## Development
+## 🛠️ Development
 
 This is a pnpm workspace: the published CLI at the root and the private React UI in `ui/`.
 
@@ -167,6 +201,6 @@ pnpm demo                # re-record docs/demo.gif (needs a build and ffmpeg)
 
 Design notes, plans and decisions are in [`docs/`](docs/). Releases use [changesets](https://github.com/changesets/changesets): add one with `pnpm changeset` for any user-visible change.
 
-## License
+## 📄 License
 
 [MIT](LICENSE)
