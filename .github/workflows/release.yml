@@ -38,3 +38,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+      # changeset publish v3 no longer prints the "New tag:" lines the action
+      # parses, so it neither pushes tags nor creates releases. Do both here
+      # for any tag made by this run that isn't on the remote yet.
+      - name: Push tags and create GitHub releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for tag in $(git tag --points-at HEAD); do
+            if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
+              continue
+            fi
+            git push origin "refs/tags/$tag"
+            version="${tag##*@}"
+            awk -v v="## $version" '$0 == v { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > notes.md
+            gh release create "$tag" --title "$tag" --notes-file notes.md
+          done
