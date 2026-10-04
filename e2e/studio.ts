@@ -59,8 +59,13 @@ export const test = base.extend<Options & { studioUrl: string }>({
     const cwd = editing ? makeEditProject() : path.join(root, 'e2e', 'fixtures', project);
     const { child, url } = await startStudio(cwd, cliArgs);
     await use(url);
-    child.kill();
-    if (editing) rmSync(cwd, { recursive: true, force: true });
+    // Windows keeps the SQLite file locked until the process has gone.
+    if (child.exitCode === null && child.signalCode === null) {
+      const exited = new Promise((resolve) => child.once('exit', resolve));
+      child.kill();
+      await exited;
+    }
+    if (editing) rmSync(cwd, { recursive: true, force: true, maxRetries: 5 });
   },
   // Every test opens the studio through the token link and fails on any
   // browser console error (this catches CSP violations too).

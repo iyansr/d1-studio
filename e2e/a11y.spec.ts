@@ -38,11 +38,13 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await open(page, '?tab=sql');
       await page.getByRole('textbox', { name: 'SQL editor' }).click();
       await page.keyboard.type('SELECT * FROM users LIMIT 5; SELECT 1 AS one');
+      await closeCompletion(page);
       await page.keyboard.press('ControlOrMeta+Enter');
       await expect(page.getByRole('grid', { name: 'Result 2' })).toBeVisible();
       await expectNoViolations(page);
       await page.keyboard.press('ControlOrMeta+a');
       await page.keyboard.type('SELECT * FROM nope');
+      await closeCompletion(page);
       await page.keyboard.press('ControlOrMeta+Enter');
       await expect(page.getByText('no such table: nope')).toBeVisible();
       await expectNoViolations(page);
@@ -113,6 +115,17 @@ for (const colorScheme of ['light', 'dark'] as const) {
   });
 }
 
+/**
+ * Closes the completion popup that typing the last word opens. axe flags its
+ * listbox as an unfocusable scrollable region, but it is driven from the
+ * editor through aria-activedescendant.
+ */
+async function closeCompletion(page: Page) {
+  await expect(page.getByRole('listbox', { name: 'Completions' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('listbox', { name: 'Completions' })).toHaveCount(0);
+}
+
 /** Presses Tab (or Shift+Tab) until `matches` holds for the focused element. */
 async function tabTo(page: Page, matches: (el: Element) => boolean, shift = false) {
   for (let i = 0; i < 60; i++) {
@@ -144,19 +157,25 @@ test('keyboard only: open, sort, filter, page, Structure, run a query, read the 
   await page.keyboard.press('Enter');
   await expect(page.getByRole('combobox', { name: 'Column' })).toBeFocused();
   await page.keyboard.press('Enter');
+  await expect(page.getByRole('listbox')).toBeVisible();
   await page.keyboard.press('End');
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('combobox', { name: 'Column' })).toHaveText('score');
+  await expect(page.getByRole('combobox', { name: 'Column' })).toHaveText(/^score▼?$/);
   await page.keyboard.press('Tab');
   await page.keyboard.press('Enter');
+  await expect(page.getByRole('listbox')).toBeVisible();
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('combobox', { name: 'Operator' })).toHaveText('>');
+  await expect(page.getByRole('combobox', { name: 'Operator' })).toHaveText(/^>▼?$/);
   await page.keyboard.press('Tab');
   await page.keyboard.type('100');
+  await page.keyboard.press('Enter');
+  // A filtered total is counted on request.
+  await expect(footer(page)).toContainText('Rows 1–50');
+  await tabTo(page, (el) => el.textContent === 'count');
   await page.keyboard.press('Enter');
   await expect(footer(page)).toContainText('of 174');
 

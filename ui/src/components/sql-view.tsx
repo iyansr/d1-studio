@@ -103,7 +103,8 @@ export function SqlView({ meta }: { meta: Meta }) {
             <PlayIcon data-icon="inline-start" />
           )}
           Run
-          <KbdGroup className="ml-1">
+          {/* Muted Kbd colours miss AA on the primary button. */}
+          <KbdGroup className="ml-1 *:bg-primary-foreground/15 *:text-primary-foreground">
             <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>
             <Kbd>↵</Kbd>
           </KbdGroup>

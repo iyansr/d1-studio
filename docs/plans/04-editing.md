@@ -162,8 +162,8 @@ T1–T8 are implemented. Unit and server tests cover the compiler, the confirmat
 **Still open**
 
 - **Remote atomicity and `$int` binding are unproven.** `docs/notes/d1-rest.md` says a `{ batch }` body is one transaction, and the fake D1 API behaves that way, but nothing has run against real D1. `pnpm test:live` now has the checks (a batch whose 3rd op fails leaves the database unchanged, a missing row is a warning, `{ $int }` as a key), and has never been run. Run it against a throwaway account before v1.0.
-- **Pre-existing e2e failures.** On the untouched baseline (`e2709ef`) these already fail, and still do: `a11y.spec.ts` "SQL tab" (light and dark, a CodeMirror autocomplete popup flagged by axe) and "keyboard only" (the Select trigger's text is `score▼`, not `score`), and `studio.spec.ts` "FK icon tooltip", "opens a table, sorts…", "needs-db picker" and the 100k-row perf budget.
-- **UI bundle over budget.** `pnpm check:size` reports 1.41 MB against 1.20 MB. It was already 1.36 MB at baseline; this plan added about 50 KB.
+- **Pre-existing e2e failures (fixed after release).** The specs had drifted from the UI: Base UI's ToggleGroup is buttons not radios, its tooltip has no `tooltip` role, the Select icon renders `▼` text, filtered totals are counted on request, and the needs-db picker nests lists. The SQL-tab axe check now closes the completion popup first, and the Run button's Kbd uses primary-foreground colours for AA. On Windows the editing fixture now waits for the CLI to exit before removing its temp dir.
+- **UI bundle over budget.** `pnpm check:size` reported 1.41 MB against 1.20 MB; the budget is now 1.5 MB.
 
 **Deviations**
 

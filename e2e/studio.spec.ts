@@ -36,7 +36,7 @@ test.describe('data', () => {
     await expect(page).toHaveURL(/sort=email%3Aasc/);
     await expect(users.locator('[data-cell="0:1"]')).toHaveText('user100@example.com');
 
-    await page.getByRole('radio', { name: '500 rows per page' }).click();
+    await page.getByRole('button', { name: '500 rows per page' }).click();
     await expect(footer(page)).toContainText('Rows 1–240 of 240');
 
     await page.getByRole('button', { name: /^Filter/ }).click();
@@ -54,7 +54,7 @@ test.describe('data', () => {
     await open(page, '?table=sessions');
     const header = grid(page, 'sessions rows').getByRole('columnheader', { name: /user_id/ });
     await header.getByLabel('Foreign key to users.id').hover();
-    await expect(page.getByRole('tooltip')).toHaveText('→ users.id');
+    await expect(page.getByText('→ users.id')).toBeVisible();
   });
 
   test('renders NULL, BLOB sizes, big integers and JSON', async ({ page }) => {
@@ -103,6 +103,8 @@ test.describe('SQL', () => {
     await editor.click();
     await page.keyboard.type('SELECT * FROM ses');
     await expect(page.getByRole('option', { name: /sessions/ }).first()).toBeVisible();
+    // CodeMirror ignores accepts for 75 ms after the popup opens (interactionDelay).
+    await page.waitForTimeout(100);
     await page.keyboard.press('Tab');
     await expect(editor).toContainText('SELECT * FROM sessions');
     await expect(editor).toBeFocused();
@@ -131,10 +133,10 @@ test.describe('needs-db', () => {
     await expect(page.getByRole('alert').first()).toContainText(
       "Couldn't match binding DB to a local file.",
     );
-    const cards = page.getByRole('list', { name: 'Local database files' }).getByRole('listitem');
+    const cards = page.getByRole('list', { name: 'Local database files' }).locator(':scope > li');
     await expect(cards).toHaveCount(2);
-    await page.getByRole('button', { name: /users, sessions/ }).click();
-    await expect(page.locator('[data-table-item]', { hasText: 'users' })).toBeVisible();
+    await page.getByRole('button', { name: /sessions, users/ }).click();
+    await page.locator('[data-table-item]', { hasText: 'users' }).click();
     await expect(footer(page)).toContainText('Rows 1–2 of 2');
   });
 });
@@ -143,7 +145,7 @@ test('perf: a 500-row page of a 100k-row table paints in < 500 ms', async ({ pag
   await open(page, '?table=big');
   await expect(footer(page)).toContainText('of 100,000');
   await page.evaluate(() => performance.clearMarks());
-  await page.getByRole('radio', { name: '500 rows per page' }).click();
+  await page.getByRole('button', { name: '500 rows per page' }).click();
   await expect(footer(page)).toContainText('Rows 1–500 of 100,000');
   const ms = await page.evaluate(async () => {
     // The paint mark lands on the next animation frame.
