@@ -14,6 +14,7 @@ export default defineConfig({
   clean: false,
   splitting: false,
   sourcemap: false,
+  minify: true,
   // Bundle every dependency (D7) except the runtime SQLite modules; tsup's
   // noExternal wins over external, so exclude them here.
   noExternal: [/^(?!(?:node|bun):sqlite$)/],

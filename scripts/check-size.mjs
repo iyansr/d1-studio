@@ -3,7 +3,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
-const BUDGET = 1.2 * 1024 * 1024;
+const BUDGET = 1.5 * 1024 * 1024;
 const dir = path.resolve(import.meta.dirname, '..', 'dist', 'ui');
 
 function size(target) {

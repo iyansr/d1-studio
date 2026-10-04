@@ -9,7 +9,7 @@
 - The Playwright suite (T11) passes against the fixture project on all three OSes.
 - A 500-row page of a 100k-row table renders in < 500 ms, measured from request start to first paint.
 - The keyboard-only walkthrough (T10) passes, and axe finds no AA contrast violations in either theme.
-- The UI bundle is ≤ 1.2 MB before gzip, which leaves room under the 3 MB package budget.
+- The UI bundle is ≤ 1.5 MB before gzip (raised from 1.2 MB once editing landed), which leaves room under the 3 MB package budget.
 
 ---
 
