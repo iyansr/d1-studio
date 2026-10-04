@@ -38,7 +38,17 @@
 
 - `files: ["dist"]`, the `bin`, `engines`, `publishConfig.access: "public"` (required for a scoped public package), an MIT `LICENSE`, `repository`, `keywords` and `homepage`.
 - **Size budget:** a CI step runs `npm pack --dry-run --json` and fails if `unpackedSize` is 3 MB or more.
-- **Publish workflow:** `.github/workflows/release.yml`, triggered on a `v*` tag. It runs `pnpm check && pnpm build`, then `npm publish --provenance` using npm trusted publishing (OIDC).
+- **Versioning (changesets, D14):** done. `@changesets/cli` + `@changesets/changelog-github` are dev deps; `.changeset/config.json` sets `access: "public"`, `baseBranch: "main"`, and `privatePackages: { version: false, tag: false }` so the private `ui` workspace is never versioned or tagged. Scripts:
+  - `pnpm changeset`: add a changeset (any user-visible change ships with one; `feat` → minor, `fix` → patch).
+  - `pnpm version-packages`: `changeset version && oxfmt`, bumps `package.json` and writes `CHANGELOG.md`.
+  - `pnpm release`: `pnpm build && changeset publish`, publishes and creates the git tag (`@iyansr/d1-studio@x.y.z`, since the root is a workspace package).
+  - `.changeset/v1-release.md` is a pending `major` changeset, so the first version run takes `0.0.0` to `1.0.0`.
+- **Publish workflow:** `.github/workflows/release.yml`, triggered on push to `main`, with `concurrency` per ref:
+  - `permissions: contents: write, pull-requests: write, id-token: write` (the last one for OIDC).
+  - Steps: checkout, pnpm, `setup-node` (Node 24, `registry-url: https://registry.npmjs.org`), `pnpm install --frozen-lockfile`, `pnpm check`, then `changesets/action@v1` with `version: pnpm version-packages`, `publish: pnpm release`, `title`/`commit: "chore(release): version packages"`, `createGithubReleases: true`.
+  - With pending changesets the action opens or updates a "Version Packages" PR; merging it publishes.
+  - Publish uses npm trusted publishing (OIDC), no `NPM_TOKEN`: configure the trusted publisher on npmjs.com (repo + `release.yml`) before the first run, set `NPM_CONFIG_PROVENANCE=true`, and make sure the runner's npm is ≥ 11.5.1 (`npm i -g npm@latest` step if not). Verify that `changeset publish` under pnpm goes through an OIDC-capable client; if not, publish with `npm publish --provenance` for the first release.
+  - The scoped package must exist before a trusted publisher can be attached on npmjs.com. If npm still requires that, do the first `1.0.0` publish manually with `pnpm release` and a granular token, then switch to OIDC.
 - **Tarball smoke:** `npm pack`, then `npx ./iyansr-d1-studio-*.tgz --version`, then a local-mode start against the fixture.
 
 ## T3 — Cross-OS verification (M)
@@ -81,6 +91,11 @@ The npx install time is out of scope for these numbers; D7 keeps it small.
 
 ## T6 — Release (S)
 
-- Set the version to `1.0.0`, write a `CHANGELOG.md` entry, tag `v1.0.0`, push, and let the workflow publish.
-- Create a GitHub release with notes and the GIF.
+- Push `main` with `.changeset/v1-release.md` pending (expand its body into the 1.0.0 release notes first). The workflow opens the "Version Packages" PR (`0.0.0` → `1.0.0`, `CHANGELOG.md` created).
+- Review and merge the PR; the workflow publishes, tags `@iyansr/d1-studio@1.0.0` and creates the GitHub release from the changelog entry.
+- Edit the GitHub release to add the GIF.
 - Verify with `npx @iyansr/d1-studio@1.0.0 --version` on a clean machine or container.
+
+## Status
+
+- 2026-10-04: changesets set up (T2 versioning, D14). `release.yml` not written yet; T1, T3–T6 open.
