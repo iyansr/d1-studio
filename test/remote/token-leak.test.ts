@@ -44,6 +44,13 @@ afterEach(() => vi.restoreAllMocks());
 function project(): string {
   const dir = path.join(tmp, `p-${Math.random().toString(36).slice(2)}`);
   mkdirSync(path.join(dir, '.git'), { recursive: true });
+  // A project Wrangler for findWrangler; `run` is faked. Windows has no bare
+  // `wrangler` fallback, so without this nothing would run there.
+  mkdirSync(path.join(dir, 'node_modules', 'wrangler'), { recursive: true });
+  writeFileSync(
+    path.join(dir, 'node_modules', 'wrangler', 'package.json'),
+    JSON.stringify({ bin: { wrangler: 'bin/wrangler.js' } }),
+  );
   writeFileSync(
     path.join(dir, 'wrangler.jsonc'),
     JSON.stringify({
