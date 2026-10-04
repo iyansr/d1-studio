@@ -1,6 +1,6 @@
-import { classify, isReadKind } from "../sql/classify";
-import type { Statement } from "../sql/split";
-import { apiError } from "./errors";
+import { classify, isReadKind } from '../sql/classify';
+import type { Statement } from '../sql/split';
+import { apiError } from './errors';
 
 /**
  * Read-only mode (T5): every statement must classify as a read. The
@@ -14,13 +14,13 @@ export function assertReadOnly(statements: Statement[]): void {
     if (!isReadKind(kind)) {
       throw apiError(
         403,
-        `Read-only mode: ${keyword || "this statement"} is not allowed. Restart with --write to enable edits.`,
+        `Read-only mode: ${keyword || 'this statement'} is not allowed. Restart with --write to enable edits.`,
       );
     }
   }
 }
 
-const OP_KEYWORDS = { insert: "INSERT", update: "UPDATE", delete: "DELETE" } as const;
+const OP_KEYWORDS = { insert: 'INSERT', update: 'UPDATE', delete: 'DELETE' } as const;
 
 /** Grid edits are always writes, so a read-only server refuses them outright. */
 export function assertEditable(

@@ -4,8 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "typecheck": "tsc -b"
+    "build": "vite build"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

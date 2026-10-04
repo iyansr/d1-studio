@@ -1,4 +1,4 @@
-import type { ParamValue } from "./values";
+import type { ParamValue } from './values';
 
 /** A value the grid can write. BLOBs aren't editable in v1. */
 export type CellValue = null | number | string | { $int: string };
@@ -8,14 +8,14 @@ export type CellValue = null | number | string | { $int: string };
  * or the values of its primary key.
  */
 export type RowKey =
-  | { kind: "rowid"; rowid: number | string }
-  | { kind: "pk"; values: Record<string, CellValue> };
+  | { kind: 'rowid'; rowid: number | string }
+  | { kind: 'pk'; values: Record<string, CellValue> };
 
 /** One staged change. Columns left out of an insert take their DEFAULT. */
 export type EditOp =
-  | { op: "update"; key: RowKey; set: Record<string, CellValue> }
-  | { op: "insert"; values: Record<string, CellValue> }
-  | { op: "delete"; key: RowKey };
+  | { op: 'update'; key: RowKey; set: Record<string, CellValue> }
+  | { op: 'insert'; values: Record<string, CellValue> }
+  | { op: 'delete'; key: RowKey };
 
 /** The most ops one batch may carry. */
 export const MAX_OPS = 1000;
@@ -24,7 +24,7 @@ export const MAX_OPS = 1000;
  * What a write needs before it runs (D12): nothing in local mode; a click in
  * remote write mode; the typed database name for destructive SQL.
  */
-export type ConfirmLevel = "none" | "click" | "type-name";
+export type ConfirmLevel = 'none' | 'click' | 'type-name';
 
 /** `true` for a click; the database name for `type-name`. */
 export type Confirm = true | string;

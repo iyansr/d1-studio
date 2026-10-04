@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Page } from '@playwright/test';
 
 /**
  * The browser logs every non-2xx fetch as a console error. The UI handles
@@ -10,9 +10,9 @@ const HANDLED = /^Failed to load resource: the server responded with a status of
 /** Collects console errors and page errors; a spec fails if any are left at the end. */
 export function watchConsole(page: Page): string[] {
   const errors: string[] = [];
-  page.on("console", (m) => {
-    if (m.type() === "error" && !HANDLED.test(m.text())) errors.push(m.text());
+  page.on('console', (m) => {
+    if (m.type() === 'error' && !HANDLED.test(m.text())) errors.push(m.text());
   });
-  page.on("pageerror", (e) => errors.push(e.message));
+  page.on('pageerror', (e) => errors.push(e.message));
   return errors;
 }

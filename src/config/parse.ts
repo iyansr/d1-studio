@@ -1,9 +1,11 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { type ParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
-import { parse as parseToml, TomlError } from "smol-toml";
-import { UserError } from "../errors";
-import { displayPath } from "../paths";
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+import { type ParseError, parse as parseJsonc, printParseErrorCode } from 'jsonc-parser';
+import { parse as parseToml, TomlError } from 'smol-toml';
+
+import { UserError } from '../errors';
+import { displayPath } from '../paths';
 
 export interface D1Binding {
   binding: string;
@@ -21,13 +23,13 @@ export interface WranglerConfig {
 }
 
 export function parseConfig(file: string): WranglerConfig {
-  const text = readFileSync(file, "utf8");
-  const raw = file.endsWith(".toml") ? readToml(file, text) : readJsonc(file, text);
+  const text = readFileSync(file, 'utf8');
+  const raw = file.endsWith('.toml') ? readToml(file, text) : readJsonc(file, text);
   if (!isRecord(raw)) {
     throw new UserError(`${displayPath(file)}: expected an object at the top level.`);
   }
 
-  const envs: WranglerConfig["envs"] = {};
+  const envs: WranglerConfig['envs'] = {};
   if (isRecord(raw.env)) {
     for (const [name, env] of Object.entries(raw.env)) {
       if (isRecord(env)) envs[name] = { d1: readBindings(file, env.d1_databases, `env.${name}.`) };
@@ -36,8 +38,8 @@ export function parseConfig(file: string): WranglerConfig {
   return {
     path: file,
     dir: path.dirname(file),
-    accountId: typeof raw.account_id === "string" ? raw.account_id : undefined,
-    d1: readBindings(file, raw.d1_databases, ""),
+    accountId: typeof raw.account_id === 'string' ? raw.account_id : undefined,
+    d1: readBindings(file, raw.d1_databases, ''),
     envs,
   };
 }
@@ -48,15 +50,15 @@ function readBindings(file: string, value: unknown, prefix: string): D1Binding[]
     throw new UserError(`${displayPath(file)}: ${prefix}d1_databases must be an array.`);
   }
   return value.map((entry, i) => {
-    if (!isRecord(entry) || typeof entry.binding !== "string" || entry.binding === "") {
+    if (!isRecord(entry) || typeof entry.binding !== 'string' || entry.binding === '') {
       throw new UserError(`${displayPath(file)}: ${prefix}d1_databases[${i}] has no "binding".`);
     }
-    const str = (key: string) => (typeof entry[key] === "string" ? entry[key] : undefined);
+    const str = (key: string) => (typeof entry[key] === 'string' ? entry[key] : undefined);
     return {
       binding: entry.binding,
-      databaseName: str("database_name"),
-      databaseId: str("database_id"),
-      previewDatabaseId: str("preview_database_id"),
+      databaseName: str('database_name'),
+      databaseId: str('database_id'),
+      previewDatabaseId: str('preview_database_id'),
     };
   });
 }
@@ -79,7 +81,7 @@ function readToml(file: string, text: string): unknown {
     return parseToml(text);
   } catch (err) {
     if (err instanceof TomlError) {
-      const reason = err.message.split("\n")[0];
+      const reason = err.message.split('\n')[0];
       throw new UserError(
         `Failed to parse ${displayPath(file)}:${err.line}:${err.column}: ${reason}`,
       );
@@ -90,10 +92,10 @@ function readToml(file: string, text: string): unknown {
 
 function lineColumn(text: string, offset: number): { line: number; column: number } {
   const before = text.slice(0, offset);
-  const line = before.split("\n").length;
-  return { line, column: offset - before.lastIndexOf("\n") };
+  const line = before.split('\n').length;
+  return { line, column: offset - before.lastIndexOf('\n') };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

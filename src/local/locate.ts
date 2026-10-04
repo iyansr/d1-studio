@@ -1,14 +1,15 @@
-import { closeSync, openSync, readdirSync, readSync, statSync } from "node:fs";
-import path from "node:path";
-import type { D1Binding } from "../config/parse";
-import { UserError } from "../errors";
-import { displayPath } from "../paths";
-import { isHiddenTable } from "../shared/tables";
-import { quoteIdent } from "../sql/ident";
-import { localD1FileName } from "./filename";
-import { openSqlite } from "./sqlite";
+import { closeSync, openSync, readdirSync, readSync, statSync } from 'node:fs';
+import path from 'node:path';
 
-export const D1_STATE_SUBDIR = path.join("v3", "d1", "miniflare-D1DatabaseObject");
+import type { D1Binding } from '../config/parse';
+import { UserError } from '../errors';
+import { displayPath } from '../paths';
+import { isHiddenTable } from '../shared/tables';
+import { quoteIdent } from '../sql/ident';
+import { localD1FileName } from './filename';
+import { openSqlite } from './sqlite';
+
+export const D1_STATE_SUBDIR = path.join('v3', 'd1', 'miniflare-D1DatabaseObject');
 /** Row counts are shown for at most this many tables per candidate file. */
 const COUNTED_TABLES = 5;
 
@@ -23,7 +24,7 @@ export function resolvePersistDir(options: {
 }): string {
   if (options.persistTo) return path.resolve(options.cwd, options.persistTo);
   const base = options.userConfigPath ? path.dirname(options.userConfigPath) : options.cwd;
-  return path.resolve(base, ".wrangler", "state");
+  return path.resolve(base, '.wrangler', 'state');
 }
 
 export function d1StateDir(persistDir: string): string {
@@ -69,7 +70,7 @@ export async function listCandidates(dir: string): Promise<CandidateFile[]> {
     return [];
   }
   const files = names
-    .filter((name) => name.endsWith(".sqlite") && name !== "metadata.sqlite")
+    .filter((name) => name.endsWith('.sqlite') && name !== 'metadata.sqlite')
     .map((name) => ({ name, file: path.join(dir, name), stat: statSync(path.join(dir, name)) }))
     .filter(({ stat }) => stat.isFile())
     .sort((a, b) => b.stat.mtimeMs - a.stat.mtimeMs);
@@ -93,7 +94,7 @@ export async function listCandidates(dir: string): Promise<CandidateFile[]> {
 }
 
 /** User tables in `file`, with row counts for the first few. */
-async function peekTables(file: string): Promise<Candidate["tables"]> {
+async function peekTables(file: string): Promise<Candidate['tables']> {
   const conn = await openSqlite(file, { readOnly: true });
   try {
     const names = conn
@@ -115,14 +116,14 @@ async function peekTables(file: string): Promise<Candidate["tables"]> {
   }
 }
 
-const SQLITE_HEADER = Buffer.from("SQLite format 3\0", "latin1");
+const SQLITE_HEADER = Buffer.from('SQLite format 3\0', 'latin1');
 
 /** For a positional path: the file must exist and carry the SQLite header. */
 export function assertSqliteFile(file: string): void {
   const shown = displayPath(file);
   if (!isFile(file)) throw new UserError(`No such file: ${shown}`);
   const header = Buffer.alloc(SQLITE_HEADER.length);
-  const fd = openSync(file, "r");
+  const fd = openSync(file, 'r');
   try {
     readSync(fd, header, 0, header.length, 0);
   } finally {
@@ -134,11 +135,11 @@ export function assertSqliteFile(file: string): void {
 }
 
 export const NO_LOCAL_DB_HINT =
-  "Run `wrangler dev` or `wrangler d1 migrations apply --local` first.";
+  'Run `wrangler dev` or `wrangler d1 migrations apply --local` first.';
 
 export type LocalTarget =
-  | { kind: "file"; path: string }
-  | { kind: "needs-db"; candidates: CandidateFile[] };
+  | { kind: 'file'; path: string }
+  | { kind: 'needs-db'; candidates: CandidateFile[] };
 
 /**
  * A derived match opens directly. Otherwise, if any files exist, the studio
@@ -147,12 +148,12 @@ export type LocalTarget =
  */
 export async function resolveLocalTarget(binding: D1Binding, dir: string): Promise<LocalTarget> {
   const file = locateLocalDb(binding, dir);
-  if (file) return { kind: "file", path: file };
+  if (file) return { kind: 'file', path: file };
   const candidates = await listCandidates(dir);
-  if (candidates.length > 0) return { kind: "needs-db", candidates };
+  if (candidates.length > 0) return { kind: 'needs-db', candidates };
   throw new UserError(
     `No local D1 database found in ${displayPath(dir)}.\n${NO_LOCAL_DB_HINT}\n` +
-      "If your dev script passes --persist-to to Wrangler, pass the same --persist-to here.",
+      'If your dev script passes --persist-to to Wrangler, pass the same --persist-to here.',
   );
 }
 

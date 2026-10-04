@@ -1,6 +1,8 @@
-import { createServer, type Server } from "node:http";
-import { getRequestListener } from "@hono/node-server";
-import { UsageError } from "./args";
+import { createServer, type Server } from 'node:http';
+
+import { getRequestListener } from '@hono/node-server';
+
+import { UsageError } from './args';
 
 export const DEFAULT_PORT = 4101;
 /** How many ports after the chosen one to try when it is busy. */
@@ -18,10 +20,10 @@ export function resolvePort(input: {
   fallback?: number;
 }): ResolvedPort {
   if (input.flag !== undefined) {
-    return { port: parsePort(input.flag, "--port"), strict: true };
+    return { port: parsePort(input.flag, '--port'), strict: true };
   }
-  if (input.env !== undefined && input.env !== "") {
-    return { port: parsePort(input.env, "D1_STUDIO_PORT"), strict: false };
+  if (input.env !== undefined && input.env !== '') {
+    return { port: parsePort(input.env, 'D1_STUDIO_PORT'), strict: false };
   }
   return { port: input.fallback ?? DEFAULT_PORT, strict: false };
 }
@@ -62,9 +64,9 @@ export async function listen(
     try {
       await bind(server, host, candidate);
       const address = server.address();
-      return { server, port: typeof address === "object" && address ? address.port : candidate };
+      return { server, port: typeof address === 'object' && address ? address.port : candidate };
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "EADDRINUSE") throw err;
+      if ((err as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw err;
     }
   }
   if (strict) {
@@ -76,15 +78,15 @@ export async function listen(
 function bind(server: Server, host: string, port: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const onError = (err: Error) => {
-      server.off("listening", onListening);
+      server.off('listening', onListening);
       reject(err);
     };
     const onListening = () => {
-      server.off("error", onError);
+      server.off('error', onError);
       resolve();
     };
-    server.once("error", onError);
-    server.once("listening", onListening);
+    server.once('error', onError);
+    server.once('listening', onListening);
     server.listen(port, host);
   });
 }

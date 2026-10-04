@@ -1,13 +1,15 @@
-import type { BatchRequest, BatchResponse, Confirm, WritePreview } from "@shared/edits";
-import type { Filter, PageSize, RowsPage, Sort } from "@shared/rows";
-import { formatSort } from "@shared/rows";
-import type { ParamValue } from "@shared/values";
-import { QueryClient, queryOptions } from "@tanstack/react-query";
-import { type ClientResponse, hc } from "hono/client";
-import type { AppType } from "../../../src/server/app";
+import { QueryClient, queryOptions } from '@tanstack/react-query';
+import { type ClientResponse, hc } from 'hono/client';
+
+import type { BatchRequest, BatchResponse, Confirm, WritePreview } from '@shared/edits';
+import type { Filter, PageSize, RowsPage, Sort } from '@shared/rows';
+import { formatSort } from '@shared/rows';
+import type { ParamValue } from '@shared/values';
+
+import type { AppType } from '../../../src/server/app';
 
 /** Types come from the server routes; there are no hand-written DTOs. */
-const client = hc<AppType>("/");
+const client = hc<AppType>('/');
 
 /** What an error body carries beyond its message. */
 export interface ApiErrorDetail {
@@ -21,7 +23,7 @@ export interface ApiErrorDetail {
 
 /** An API error. `message` is the server's (for SQL errors, the engine's verbatim). */
 export class ApiError extends Error {
-  override name = "ApiError";
+  override name = 'ApiError';
   constructor(
     message: string,
     readonly status: number,
@@ -40,7 +42,7 @@ export class ApiError extends Error {
 
   /** A remote write needs a confirmation: run it again with `confirm`. */
   get confirmation(): WritePreview | undefined {
-    return this.detail.code === "confirmation_required" ? this.detail.preview : undefined;
+    return this.detail.code === 'confirmation_required' ? this.detail.preview : undefined;
   }
 }
 
@@ -62,7 +64,7 @@ export const sessionLost = (() => {
 })();
 
 type Ok<R> =
-  R extends ClientResponse<infer T, infer S, "json"> ? (S extends 200 ? T : never) : never;
+  R extends ClientResponse<infer T, infer S, 'json'> ? (S extends 200 ? T : never) : never;
 
 async function call<R extends ClientResponse<unknown, number, string>>(
   request: Promise<R>,
@@ -104,23 +106,23 @@ export const api = {
   tables: () => call(client.api.tables.$get()),
   /** Remote: counts load after the sidebar renders (D9); `refresh` recounts. */
   tableCounts: (refresh = false) =>
-    call(client.api.tables.counts.$get({ query: { refresh: refresh ? "1" : undefined } })),
+    call(client.api.tables.counts.$get({ query: { refresh: refresh ? '1' : undefined } })),
   usage: () => call(client.api.usage.$get()),
-  schema: (name: string) => call(client.api.tables[":name"].schema.$get({ param: { name } })),
+  schema: (name: string) => call(client.api.tables[':name'].schema.$get({ param: { name } })),
   schemaAll: () => call(client.api.schema.all.$get()),
   rows: (name: string, q: RowsRequest, signal?: AbortSignal) => {
     // T11 perf: request start; DataGrid marks the paint.
-    performance.mark("d1s:rows-request");
+    performance.mark('d1s:rows-request');
     return call(
-      client.api.tables[":name"].rows.$get(
+      client.api.tables[':name'].rows.$get(
         {
           param: { name },
           query: {
             limit: String(q.limit),
             offset: String(q.offset),
             sort: q.sort.map(formatSort),
-            f: q.filters.length > 0 ? JSON.stringify(q.filters) : "",
-            count: q.count ? "1" : "0",
+            f: q.filters.length > 0 ? JSON.stringify(q.filters) : '',
+            count: q.count ? '1' : '0',
           },
         },
         { init: { signal } },
@@ -136,18 +138,18 @@ export const api = {
     ) as Promise<BatchResponse>,
   /** The exact SQL `batch` would run, and what confirming it takes. */
   batchPreview: (req: BatchRequest) =>
-    call(client.api.batch.$post({ json: req, query: { dryRun: "1" } })) as Promise<WritePreview>,
+    call(client.api.batch.$post({ json: req, query: { dryRun: '1' } })) as Promise<WritePreview>,
   candidates: () => call(client.api.candidates.$get()),
   open: (candidateId: number) => call(client.api.open.$post({ json: { candidateId } })),
 };
 
 export type Meta = Awaited<ReturnType<typeof api.meta>>;
-export type TableEntry = Awaited<ReturnType<typeof api.tables>>["tables"][number];
+export type TableEntry = Awaited<ReturnType<typeof api.tables>>['tables'][number];
 export type TableCounts = Awaited<ReturnType<typeof api.tableCounts>>;
 export type TableSchema = Awaited<ReturnType<typeof api.schema>>;
-export type SchemaTable = Awaited<ReturnType<typeof api.schemaAll>>["tables"][number];
-export type QueryResult = Awaited<ReturnType<typeof api.query>>["results"][number];
-export type Candidate = Awaited<ReturnType<typeof api.candidates>>["candidates"][number];
+export type SchemaTable = Awaited<ReturnType<typeof api.schemaAll>>['tables'][number];
+export type QueryResult = Awaited<ReturnType<typeof api.query>>['results'][number];
+export type Candidate = Awaited<ReturnType<typeof api.candidates>>['candidates'][number];
 
 export interface RowsRequest {
   limit: PageSize;
@@ -171,26 +173,26 @@ export const queryClient = new QueryClient({
 
 export const queries = {
   meta: () =>
-    queryOptions({ queryKey: ["meta"], queryFn: api.meta, staleTime: Number.POSITIVE_INFINITY }),
-  tables: () => queryOptions({ queryKey: ["tables"], queryFn: api.tables }),
+    queryOptions({ queryKey: ['meta'], queryFn: api.meta, staleTime: Number.POSITIVE_INFINITY }),
+  tables: () => queryOptions({ queryKey: ['tables'], queryFn: api.tables }),
   /** Cached for the session; only the ↻ button recounts (D9). */
   tableCounts: () =>
     queryOptions({
-      queryKey: ["table-counts"],
+      queryKey: ['table-counts'],
       queryFn: () => api.tableCounts(),
       staleTime: Number.POSITIVE_INFINITY,
     }),
-  usage: () => queryOptions({ queryKey: ["usage"], queryFn: api.usage }),
+  usage: () => queryOptions({ queryKey: ['usage'], queryFn: api.usage }),
   schema: (name: string) =>
-    queryOptions({ queryKey: ["schema", name], queryFn: () => api.schema(name) }),
-  schemaAll: () => queryOptions({ queryKey: ["schema-all"], queryFn: api.schemaAll }),
+    queryOptions({ queryKey: ['schema', name], queryFn: () => api.schema(name) }),
+  schemaAll: () => queryOptions({ queryKey: ['schema-all'], queryFn: api.schemaAll }),
   rows: (name: string, q: RowsRequest) =>
     queryOptions({
-      queryKey: ["rows", name, q],
+      queryKey: ['rows', name, q],
       queryFn: ({ signal }) => api.rows(name, q, signal),
       // Keep the old page on screen while paging, but not across tables.
       placeholderData: (previous, previousQuery) =>
         previousQuery?.queryKey[1] === name ? previous : undefined,
     }),
-  candidates: () => queryOptions({ queryKey: ["candidates"], queryFn: api.candidates }),
+  candidates: () => queryOptions({ queryKey: ['candidates'], queryFn: api.candidates }),
 };

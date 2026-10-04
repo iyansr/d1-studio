@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
-import { CopyIcon, KeyRoundIcon, LinkIcon, ListTreeIcon } from "lucide-react";
-import type { ReactNode } from "react";
-import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useQuery } from '@tanstack/react-query';
+import { CopyIcon, KeyRoundIcon, LinkIcon, ListTreeIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { toast } from 'sonner';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardAction,
@@ -12,15 +13,15 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
-import { Skeleton } from "@/components/ui/skeleton";
+} from '@/components/ui/empty';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -28,9 +29,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { CodeView } from "@/editor/code-view";
-import { queries, type TableSchema } from "@/lib/api";
+} from '@/components/ui/table';
+import { CodeView } from '@/editor/code-view';
+import { queries, type TableSchema } from '@/lib/api';
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
@@ -47,7 +48,7 @@ export function StructureView({
   if (schema.isPending) {
     return (
       <div className="flex flex-col gap-4 p-4">
-        {["a", "b", "c"].map((k) => (
+        {['a', 'b', 'c'].map((k) => (
           <Skeleton key={k} className="h-40 w-full" />
         ))}
       </div>
@@ -65,26 +66,26 @@ export function StructureView({
   }
 
   const s = schema.data;
-  const kind = s.type === "view" ? "view" : "table";
+  const kind = s.type === 'view' ? 'view' : 'table';
   const traits = [
-    s.withoutRowid && "WITHOUT ROWID",
-    s.strict && "STRICT",
-    s.type === "virtual" && "virtual",
+    s.withoutRowid && 'WITHOUT ROWID',
+    s.strict && 'STRICT',
+    s.type === 'virtual' && 'virtual',
   ]
     .filter(Boolean)
-    .join(" · ");
+    .join(' · ');
 
   return (
     <div className="flex flex-col gap-4 p-4">
       <Section
         title="Columns"
-        description={[plural(s.columns.length, "column"), traits].filter(Boolean).join(" · ")}
+        description={[plural(s.columns.length, 'column'), traits].filter(Boolean).join(' · ')}
       >
         <Columns schema={s} />
       </Section>
 
-      {kind === "table" && (
-        <Section title="Indexes" description={plural(s.indexes.length, "index", "indexes")}>
+      {kind === 'table' && (
+        <Section title="Indexes" description={plural(s.indexes.length, 'index', 'indexes')}>
           {s.indexes.length === 0 ? (
             <None
               title="No indexes"
@@ -96,8 +97,8 @@ export function StructureView({
         </Section>
       )}
 
-      {kind === "table" && (
-        <Section title="Foreign keys" description={plural(s.foreignKeys.length, "foreign key")}>
+      {kind === 'table' && (
+        <Section title="Foreign keys" description={plural(s.foreignKeys.length, 'foreign key')}>
           {s.foreignKeys.length === 0 ? (
             <None
               title="No foreign keys"
@@ -137,7 +138,7 @@ export function StructureView({
 async function copyDdl(sql: string) {
   try {
     await navigator.clipboard.writeText(sql);
-    toast.success("CREATE statement copied");
+    toast.success('CREATE statement copied');
   } catch {
     toast.error("Couldn't copy to the clipboard");
   }
@@ -175,7 +176,7 @@ function Columns({ schema }: { schema: TableSchema }) {
   const compositePk = schema.primaryKey.length > 1;
   const fkOf = new Map(
     schema.foreignKeys.flatMap((fk) =>
-      fk.from.map((from, i) => [from, `${fk.table}(${fk.to[i] ?? "…"})`] as const),
+      fk.from.map((from, i) => [from, `${fk.table}(${fk.to[i] ?? '…'})`] as const),
     ),
   );
   return (
@@ -206,7 +207,7 @@ function Columns({ schema }: { schema: TableSchema }) {
             <TableCell className="font-mono">{c.defaultValue ?? muted}</TableCell>
             <TableCell>
               <span className="flex flex-wrap gap-1">
-                {c.pk > 0 && <Badge>{compositePk ? `PK ${c.pk}` : "PK"}</Badge>}
+                {c.pk > 0 && <Badge>{compositePk ? `PK ${c.pk}` : 'PK'}</Badge>}
                 {c.notNull && <Badge variant="secondary">NOT NULL</Badge>}
                 {c.generated && (
                   <Badge variant="outline">GENERATED {c.generated.toUpperCase()}</Badge>
@@ -239,13 +240,13 @@ function Indexes({ schema }: { schema: TableSchema }) {
               <span className="flex flex-wrap items-center gap-1.5">
                 {index.name}
                 {index.unique && <Badge variant="secondary">UNIQUE</Badge>}
-                {index.origin === "pk" && <Badge variant="outline">PRIMARY KEY</Badge>}
+                {index.origin === 'pk' && <Badge variant="outline">PRIMARY KEY</Badge>}
               </span>
             </TableCell>
             <TableCell className="font-mono">
               {index.columns
-                .map((col, i) => `${col ?? "(expression)"}${index.desc[i] ? " DESC" : ""}`)
-                .join(", ")}
+                .map((col, i) => `${col ?? '(expression)'}${index.desc[i] ? ' DESC' : ''}`)
+                .join(', ')}
             </TableCell>
             <TableCell className="font-mono whitespace-normal">{index.where ?? muted}</TableCell>
           </TableRow>
@@ -276,7 +277,7 @@ function ForeignKeys({
           <TableRow key={fk.id}>
             <TableCell className="font-mono">
               <span className="flex items-center gap-1">
-                {fk.from.join(", ")} →
+                {fk.from.join(', ')} →
                 <Button
                   variant="link"
                   size="sm"
@@ -285,7 +286,7 @@ function ForeignKeys({
                 >
                   {fk.table}
                 </Button>
-                ({fk.to.map((t) => t ?? "primary key").join(", ")})
+                ({fk.to.map((t) => t ?? 'primary key').join(', ')})
               </span>
             </TableCell>
             <TableCell className="font-mono">{fk.onUpdate}</TableCell>

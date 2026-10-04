@@ -1,19 +1,19 @@
-import { findConfig } from "../config/find";
-import { type D1Binding, parseConfig } from "../config/parse";
-import { pickBinding, selectBindings } from "../config/select";
-import { RemoteDriver } from "../drivers/remote";
-import { UserError } from "../errors";
-import { displayPath } from "../paths";
-import { D1ApiError, D1Client, type D1Database } from "../remote/client";
+import { findConfig } from '../config/find';
+import { type D1Binding, parseConfig } from '../config/parse';
+import { pickBinding, selectBindings } from '../config/select';
+import { RemoteDriver } from '../drivers/remote';
+import { UserError } from '../errors';
+import { displayPath } from '../paths';
+import { D1ApiError, D1Client, type D1Database } from '../remote/client';
 import {
   type Credentials,
   explainAuthError,
   type ResolveOptions,
   resolveCredentials,
-} from "../remote/credentials";
-import { type AccountMeta, type DatabaseMeta, readySession, type Session } from "../server/context";
-import type { CliOptions } from "./args";
-import { confirmRemoteWrite, shortId, type TextPrompt } from "./confirm";
+} from '../remote/credentials';
+import { type AccountMeta, type DatabaseMeta, readySession, type Session } from '../server/context';
+import type { CliOptions } from './args';
+import { confirmRemoteWrite, shortId, type TextPrompt } from './confirm';
 
 export type SelectDatabase = (databases: D1Database[]) => Promise<D1Database>;
 
@@ -22,9 +22,9 @@ export interface RemoteDeps {
   cwd: string;
   tty: boolean;
   fetch?: typeof fetch;
-  run?: ResolveOptions["run"];
-  findWrangler?: ResolveOptions["findWrangler"];
-  selectAccount?: ResolveOptions["selectAccount"];
+  run?: ResolveOptions['run'];
+  findWrangler?: ResolveOptions['findWrangler'];
+  selectAccount?: ResolveOptions['selectAccount'];
   selectDatabase?: SelectDatabase;
   confirm?: TextPrompt;
   print?: (text: string) => void;
@@ -35,7 +35,7 @@ export interface OpenedRemote {
   driver: RemoteDriver;
   /** The banner's `database` line. */
   database: string;
-  source?: { label: "config"; value: string };
+  source?: { label: 'config'; value: string };
   /** The banner's `account` line. */
   account: string;
   accountMeta: AccountMeta;
@@ -70,7 +70,7 @@ export async function openRemote(options: CliOptions, deps: RemoteDeps): Promise
   });
   const client = new D1Client({ token: creds.token, fetch: deps.fetch });
   const where = config
-    ? `${displayPath(config.path, deps.cwd)}${options.env ? ` [env.${options.env}]` : ""}`
+    ? `${displayPath(config.path, deps.cwd)}${options.env ? ` [env.${options.env}]` : ''}`
     : undefined;
 
   const target =
@@ -95,14 +95,14 @@ export async function openRemote(options: CliOptions, deps: RemoteDeps): Promise
   );
   const database: DatabaseMeta = { name: target.name, binding: target.binding, id: target.id };
   const parts = [target.binding && `binding ${target.binding}`, `id ${shortId(target.id)}`];
-  const via = creds.source === "env" ? "CLOUDFLARE_API_TOKEN" : "wrangler login";
+  const via = creds.source === 'env' ? 'CLOUDFLARE_API_TOKEN' : 'wrangler login';
   return {
     session: readySession(driver, database),
     driver,
-    database: `${target.name} (${parts.filter(Boolean).join(", ")})`,
+    database: `${target.name} (${parts.filter(Boolean).join(', ')})`,
     source: found && {
-      label: "config",
-      value: `${displayPath(found.path, deps.cwd)}${found.redirected ? " (redirected)" : ""}`,
+      label: 'config',
+      value: `${displayPath(found.path, deps.cwd)}${found.redirected ? ' (redirected)' : ''}`,
     },
     account: `${creds.accountName ? `${creds.accountName} (${shortId(creds.accountId)})` : creds.accountId}, via ${via}`,
     accountMeta: { id: creds.accountId, name: accountLabel ?? null },
@@ -122,9 +122,9 @@ async function fromBindings(
   if (!inConfig) {
     const match = await findByName(client, creds, db);
     if (match) return { id: match.uuid, name: match.name, binding: null };
-    const names = bindings.map((b) => b.binding).join(", ");
+    const names = bindings.map((b) => b.binding).join(', ');
     throw new UserError(
-      `No D1 binding or database named "${db}" in ${options.where ?? "the config"} (${names}), nor in the account.`,
+      `No D1 binding or database named "${db}" in ${options.where ?? 'the config'} (${names}), nor in the account.`,
     );
   }
   const binding = await pickBinding(bindings, db, { tty: options.tty, source: options.where });
@@ -138,8 +138,8 @@ async function fromBindings(
     : undefined;
   if (!match) {
     throw new UserError(
-      `Binding ${binding.binding} has no database_id${binding.databaseName ? `, and no database named "${binding.databaseName}" is in the account` : ""}. ` +
-        "Add database_id to the Wrangler config, or pass --db <name>.",
+      `Binding ${binding.binding} has no database_id${binding.databaseName ? `, and no database named "${binding.databaseName}" is in the account` : ''}. ` +
+        'Add database_id to the Wrangler config, or pass --db <name>.',
     );
   }
   return { id: match.uuid, name: match.name, binding: binding.binding };
@@ -154,7 +154,7 @@ async function fromAccount(
 ): Promise<Target> {
   const databases = await list(client, creds);
   if (databases.length === 0) {
-    throw new UserError("This Cloudflare account has no D1 databases.");
+    throw new UserError('This Cloudflare account has no D1 databases.');
   }
   if (db !== undefined) {
     const match = databases.find((d) => d.name === db) ?? databases.find((d) => d.uuid === db);
@@ -173,7 +173,7 @@ async function fromAccount(
 }
 
 function available(databases: D1Database[]): string {
-  return `Available: ${databases.map((d) => d.name).join(", ")}.`;
+  return `Available: ${databases.map((d) => d.name).join(', ')}.`;
 }
 
 async function findByName(
@@ -216,12 +216,12 @@ async function accountName(client: D1Client, creds: Credentials): Promise<string
   }
 }
 
-const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 
 const clackSelectDatabase: SelectDatabase = async (databases) => {
-  const { isCancel, select } = await import("@clack/prompts");
+  const { isCancel, select } = await import('@clack/prompts');
   const choice = await select({
-    message: "Which D1 database?",
+    message: 'Which D1 database?',
     options: databases.map((d, i) => {
       const created = d.created_at ? Date.parse(d.created_at) : Number.NaN;
       const hint = [
@@ -229,12 +229,12 @@ const clackSelectDatabase: SelectDatabase = async (databases) => {
         !Number.isNaN(created) && `created ${dateFormat.format(created)}`,
       ]
         .filter(Boolean)
-        .join(" · ");
+        .join(' · ');
       return { value: i, label: d.name, hint };
     }),
   });
-  if (isCancel(choice)) throw new UserError("Cancelled.");
+  if (isCancel(choice)) throw new UserError('Cancelled.');
   const picked = databases[choice];
-  if (!picked) throw new UserError("Cancelled.");
+  if (!picked) throw new UserError('Cancelled.');
   return picked;
 };

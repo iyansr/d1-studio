@@ -1,8 +1,8 @@
-import type { Cell } from "@shared/values";
-import { CopyIcon } from "lucide-react";
-import { useRef, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { CopyIcon } from 'lucide-react';
+import { useRef, useState } from 'react';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
@@ -10,17 +10,19 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
-import { CodeEditor, type CodeEditorHandle } from "@/editor/code-editor";
-import { CodeView } from "@/editor/code-view";
-import { formatJson, jsonProblem } from "@/edits/values";
-import { expandedText } from "./cells";
+} from '@/components/ui/sheet';
+import { CodeEditor, type CodeEditorHandle } from '@/editor/code-editor';
+import { CodeView } from '@/editor/code-view';
+import { formatJson, jsonProblem } from '@/edits/values';
+import type { Cell } from '@shared/values';
+
+import { expandedText } from './cells';
 
 export interface ExpandedCell {
   column: string;
   type: string;
   /** 1-based row number across pages, or a row that isn't saved yet. */
-  row: number | "new";
+  row: number | 'new';
   value: Cell;
   /** Where the cell is in the grid; the grid stages an edit back to it. */
   at: { row: number; col: number };
@@ -69,7 +71,7 @@ function SheetBody(props: {
   const editable = cell.editable && props.onStage !== undefined;
   const [text, setText] = useState(shown.text);
   const editor = useRef<CodeEditorHandle | null>(null);
-  const json = shown.language === "json";
+  const json = shown.language === 'json';
   const problem = editable && json ? jsonProblem(text) : null;
   const changed = text !== shown.text;
 
@@ -78,9 +80,9 @@ function SheetBody(props: {
       <SheetHeader>
         <SheetTitle className="font-mono">{cell.column}</SheetTitle>
         <SheetDescription>
-          {cell.row === "new" ? "New row" : `Row ${cell.row}`}
-          {cell.type ? ` · ${cell.type}` : ""}
-          {json ? " · JSON, pretty-printed" : ""}
+          {cell.row === 'new' ? 'New row' : `Row ${cell.row}`}
+          {cell.type ? ` · ${cell.type}` : ''}
+          {json ? ' · JSON, pretty-printed' : ''}
         </SheetDescription>
       </SheetHeader>
       {editable ? (

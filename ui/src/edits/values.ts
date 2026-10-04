@@ -1,8 +1,8 @@
-import type { CellValue } from "@shared/edits";
-import type { Cell } from "@shared/values";
-import { affinity } from "@/grid/cells";
+import { affinity } from '@/grid/cells';
+import type { CellValue } from '@shared/edits';
+import type { Cell } from '@shared/values';
 
-export type InputKind = "number" | "text";
+export type InputKind = 'number' | 'text';
 
 /**
  * INTEGER and REAL columns get a number input (plan 04-T6). An untyped
@@ -10,19 +10,19 @@ export type InputKind = "number" | "text";
  */
 export function inputKind(type: string, original: Cell | undefined): InputKind {
   const kind = affinity(type);
-  if (kind === "integer" || kind === "real") return "number";
+  if (kind === 'integer' || kind === 'real') return 'number';
   const holdsNumber =
-    typeof original === "number" ||
-    (typeof original === "object" && original !== null && "$int" in original);
-  return kind === "blob" && type === "" && holdsNumber ? "number" : "text";
+    typeof original === 'number' ||
+    (typeof original === 'object' && original !== null && '$int' in original);
+  return kind === 'blob' && type === '' && holdsNumber ? 'number' : 'text';
 }
 
 /** What the editor starts with. NULL and BLOBs start empty. */
 export function editText(value: Cell | undefined): string {
-  if (value === undefined || value === null) return "";
-  if (typeof value === "number") return String(value);
-  if (typeof value === "string") return value;
-  return "$int" in value ? value.$int : "";
+  if (value === undefined || value === null) return '';
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'string') return value;
+  return '$int' in value ? value.$int : '';
 }
 
 export type Parsed = { ok: true; value: CellValue } | { ok: false; message: string };
@@ -36,7 +36,7 @@ const INT64_MAX = 2n ** 63n - 1n;
  */
 export function parseNumber(text: string): Parsed {
   const t = text.trim();
-  if (t === "") return { ok: false, message: "Enter a number, or set NULL." };
+  if (t === '') return { ok: false, message: 'Enter a number, or set NULL.' };
   if (/^[+-]?\d+$/.test(t)) {
     const n = Number(t);
     if (Number.isSafeInteger(n)) return { ok: true, value: n };
@@ -52,18 +52,18 @@ export function parseNumber(text: string): Parsed {
 }
 
 export function parseInput(kind: InputKind, text: string): Parsed {
-  return kind === "number" ? parseNumber(text) : { ok: true, value: text };
+  return kind === 'number' ? parseNumber(text) : { ok: true, value: text };
 }
 
 /** `null` when `text` is valid JSON that is an object or array; otherwise why not. */
 export function jsonProblem(text: string): string | null {
   try {
     const parsed: unknown = JSON.parse(text);
-    return typeof parsed === "object" && parsed !== null
+    return typeof parsed === 'object' && parsed !== null
       ? null
-      : "The value must be a JSON object or array.";
+      : 'The value must be a JSON object or array.';
   } catch (err) {
-    return err instanceof Error ? err.message : "Not valid JSON.";
+    return err instanceof Error ? err.message : 'Not valid JSON.';
   }
 }
 

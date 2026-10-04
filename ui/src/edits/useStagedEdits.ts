@@ -1,5 +1,6 @@
-import { useSyncExternalStore } from "react";
-import { StagedEdits, type StagedSnapshot } from "./staged-edits";
+import { useSyncExternalStore } from 'react';
+
+import { StagedEdits, type StagedSnapshot } from './staged-edits';
 
 /** One store per table, so staged changes outlive the grid (a tab switch, a refetch). */
 const stores = new Map<string, StagedEdits>();

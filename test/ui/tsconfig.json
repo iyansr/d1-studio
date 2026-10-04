@@ -1,0 +1,11 @@
+{
+  "extends": "../../ui/tsconfig.app.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["../../ui/src/*"],
+      "@shared/*": ["../../src/shared/*"]
+    },
+    "types": ["node"]
+  },
+  "include": [".", "../../src/shared/globals.d.ts", "../../src/local/bun-sqlite.d.ts"]
+}

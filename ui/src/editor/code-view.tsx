@@ -1,10 +1,12 @@
-import { json } from "@codemirror/lang-json";
-import { SQLite, sql } from "@codemirror/lang-sql";
-import { EditorState } from "@codemirror/state";
-import { EditorView, lineNumbers } from "@codemirror/view";
-import { useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
-import { shadcnTheme } from "./theme";
+import { json } from '@codemirror/lang-json';
+import { SQLite, sql } from '@codemirror/lang-sql';
+import { EditorState } from '@codemirror/state';
+import { EditorView, lineNumbers } from '@codemirror/view';
+import { useEffect, useRef } from 'react';
+
+import { cn } from '@/lib/utils';
+
+import { shadcnTheme } from './theme';
 
 const LANGUAGES = {
   sql: () => sql({ dialect: SQLite }),
@@ -33,7 +35,7 @@ export function CodeView(props: {
         extensions: [
           EditorState.readOnly.of(true),
           EditorView.lineWrapping,
-          EditorView.contentAttributes.of({ "aria-label": label }),
+          EditorView.contentAttributes.of({ 'aria-label': label }),
           numbers ? lineNumbers() : [],
           LANGUAGES[language](),
           shadcnTheme,
@@ -44,6 +46,6 @@ export function CodeView(props: {
   }, [value, language, label, numbers]);
 
   return (
-    <div ref={ref} className={cn("min-h-0 overflow-hidden rounded-md border", props.className)} />
+    <div ref={ref} className={cn('min-h-0 overflow-hidden rounded-md border', props.className)} />
   );
 }

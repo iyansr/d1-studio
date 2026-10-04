@@ -1,7 +1,7 @@
-import { SchemaCache } from "../drivers/introspect";
-import type { Driver } from "../drivers/types";
-import type { CandidateFile } from "../local/locate";
-import type { Notice } from "../shared/notices";
+import { SchemaCache } from '../drivers/introspect';
+import type { Driver } from '../drivers/types';
+import type { CandidateFile } from '../local/locate';
+import type { Notice } from '../shared/notices';
 
 export interface DatabaseMeta {
   name: string;
@@ -17,7 +17,7 @@ export interface TableCounts {
 
 export type Session =
   | {
-      state: "ready";
+      state: 'ready';
       driver: Driver;
       database: DatabaseMeta;
       schema: SchemaCache;
@@ -25,7 +25,7 @@ export type Session =
       counts?: Promise<TableCounts>;
     }
   | {
-      state: "needs-db";
+      state: 'needs-db';
       candidates: CandidateFile[];
       /** The binding no file matched, for the picker's heading. */
       unmatched?: DatabaseMeta;
@@ -39,7 +39,7 @@ export interface AccountMeta {
 
 export interface AppContext {
   version: string;
-  mode: "local" | "remote";
+  mode: 'local' | 'remote';
   readOnly: boolean;
   token: string;
   /** The bind address and port. `port` is updated once the server is listening. */
@@ -58,5 +58,5 @@ export interface AppContext {
 }
 
 export function readySession(driver: Driver, database: DatabaseMeta): Session {
-  return { state: "ready", driver, database, schema: new SchemaCache(driver.query.bind(driver)) };
+  return { state: 'ready', driver, database, schema: new SchemaCache(driver.query.bind(driver)) };
 }

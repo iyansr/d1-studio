@@ -1,8 +1,9 @@
-import { type ReactNode, useEffect, useState } from "react";
-import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { ApiError } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { type ReactNode, useEffect, useState } from 'react';
+
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { ApiError } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 /**
  * An API error with its message verbatim (UI-8). When the request may work
@@ -25,7 +26,7 @@ export function ErrorAlert(props: {
   return (
     <Alert
       variant="destructive"
-      className={cn(actions && "has-data-[slot=alert-action]:pr-2.5", props.className)}
+      className={cn(actions && 'has-data-[slot=alert-action]:pr-2.5', props.className)}
     >
       <AlertTitle>{props.title}</AlertTitle>
       <AlertDescription className="font-mono whitespace-pre-wrap">{error.message}</AlertDescription>
@@ -34,7 +35,7 @@ export function ErrorAlert(props: {
           {props.children}
           {retry && (
             <Button variant="outline" size="sm" disabled={wait > 0} onClick={retry}>
-              {wait > 0 ? `Retry in ${wait}s` : "Retry"}
+              {wait > 0 ? `Retry in ${wait}s` : 'Retry'}
             </Button>
           )}
         </AlertAction>

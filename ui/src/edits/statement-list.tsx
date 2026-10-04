@@ -1,8 +1,10 @@
-import type { PreviewStatement } from "@shared/edits";
-import { useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
-import { CodeView } from "@/editor/code-view";
-import { groupStatements } from "./statements";
+import { useMemo } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { CodeView } from '@/editor/code-view';
+import type { PreviewStatement } from '@shared/edits';
+
+import { groupStatements } from './statements';
 
 /** Every statement of a write, highlighted and read-only, destructive ones badged. */
 export function StatementList({ statements }: { statements: readonly PreviewStatement[] }) {
@@ -11,7 +13,7 @@ export function StatementList({ statements }: { statements: readonly PreviewStat
     <ol className="flex flex-col gap-3" aria-label="Statements">
       {blocks.map((block) => {
         const label =
-          block.kind === "statement"
+          block.kind === 'statement'
             ? `${block.number}`
             : block.from === block.to
               ? `${block.from}`
@@ -20,7 +22,7 @@ export function StatementList({ statements }: { statements: readonly PreviewStat
           <li key={label} className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
               <span>{label}</span>
-              {block.kind === "statement" && block.dangerous && (
+              {block.kind === 'statement' && block.dangerous && (
                 <Badge variant="destructive">destructive</Badge>
               )}
             </div>

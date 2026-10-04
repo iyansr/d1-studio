@@ -4,15 +4,15 @@ import {
   type D1RawResult,
   type D1Target,
   NO_D1_ACCESS,
-} from "../remote/client";
-import type { Cell, ParamValue } from "../shared/values";
-import { classify, isReadKind } from "../sql/classify";
-import { splitStatements } from "../sql/split";
-import { BatchError, DbError, type Driver, type QueryResult, type Stmt, type Usage } from "./types";
+} from '../remote/client';
+import type { Cell, ParamValue } from '../shared/values';
+import { classify, isReadKind } from '../sql/classify';
+import { splitStatements } from '../sql/split';
+import { BatchError, DbError, type Driver, type QueryResult, type Stmt, type Usage } from './types';
 
 /** A deployed D1 database over the REST API's `raw` endpoint (S1). */
 export class RemoteDriver implements Driver {
-  readonly mode = "remote";
+  readonly mode = 'remote';
   readonly usage: Usage = { rowsRead: 0, rowsWritten: 0 };
 
   constructor(
@@ -26,7 +26,7 @@ export class RemoteDriver implements Driver {
     const statements = splitStatements(sql);
     if (statements.length === 0) return [];
     if (params.length > 0 && statements.length > 1) {
-      throw new DbError("Parameters can only be used with a single statement.");
+      throw new DbError('Parameters can only be used with a single statement.');
     }
     const retry = statements.every((s) => isReadKind(classify(s.tokens).kind));
     const stmt = params.length > 0 ? { sql, params: params.map(encodeParam) } : { sql };
@@ -38,7 +38,7 @@ export class RemoteDriver implements Driver {
     const parsed = stmts.map((stmt, i) => {
       const statements = splitStatements(stmt.sql);
       if (statements.length !== 1) {
-        throw new BatchError(i, "Each batch entry must be exactly one statement.");
+        throw new BatchError(i, 'Each batch entry must be exactly one statement.');
       }
       return statements[0] as (typeof statements)[number];
     });
@@ -105,9 +105,9 @@ function toDriverError(err: unknown): unknown {
  * text (S1), which column affinity absorbs.
  */
 export function encodeParam(value: ParamValue): null | number | string {
-  if (value === null || typeof value === "number" || typeof value === "string") return value;
-  if (typeof value === "boolean") return value ? 1 : 0;
-  if (typeof value === "object" && typeof value.$int === "string" && /^-?\d+$/.test(value.$int)) {
+  if (value === null || typeof value === 'number' || typeof value === 'string') return value;
+  if (typeof value === 'boolean') return value ? 1 : 0;
+  if (typeof value === 'object' && typeof value.$int === 'string' && /^-?\d+$/.test(value.$int)) {
     return value.$int;
   }
   throw new DbError(`Unsupported parameter value: ${JSON.stringify(value)}`);
@@ -116,8 +116,8 @@ export function encodeParam(value: ParamValue): null | number | string {
 /** The API → `Cell`. BLOBs arrive as byte arrays; integers past 2^53 already lost precision. */
 export function decodeCell(value: unknown): Cell {
   if (value === null || value === undefined) return null;
-  if (typeof value === "number" || typeof value === "string") return value;
-  if (typeof value === "boolean") return value ? 1 : 0;
+  if (typeof value === 'number' || typeof value === 'string') return value;
+  if (typeof value === 'boolean') return value ? 1 : 0;
   if (Array.isArray(value)) return { $blob: value.length };
   return JSON.stringify(value);
 }

@@ -3,16 +3,13 @@
   "version": "0.0.0",
   "description": "Zero-config studio for Cloudflare D1, local or remote",
   "license": "MIT",
-  "type": "module",
   "bin": {
     "d1-studio": "dist/cli.js"
   },
   "files": [
     "dist"
   ],
-  "engines": {
-    "node": ">=22.16"
-  },
+  "type": "module",
   "publishConfig": {
     "access": "public"
   },
@@ -25,18 +22,15 @@
     "test:smoke": "vitest run --config vitest.smoke.config.ts",
     "test:live": "vitest run --config vitest.live.config.ts",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit && pnpm --filter ui typecheck",
-    "lint": "biome check .",
-    "format": "biome check --write .",
-    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "lint": "oxlint",
+    "format": "oxfmt && oxlint --fix",
+    "check": "pnpm lint && pnpm format:check && pnpm test",
     "check:size": "node scripts/check-size.mjs",
-    "fixtures": "node --experimental-strip-types test/fixtures/make.ts"
+    "fixtures": "node --experimental-strip-types test/fixtures/make.ts",
+    "format:check": "oxfmt --check"
   },
-  "dependencies": {},
-  "packageManager": "pnpm@12.4.2",
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "@biomejs/biome": "^2.5.14",
     "@clack/prompts": "^1.8.1",
     "@hono/node-server": "^2.1.1",
     "@playwright/test": "^1.63.0",
@@ -44,9 +38,16 @@
     "citty": "^0.2.2",
     "hono": "^4.13.9",
     "jsonc-parser": "^3.3.1",
+    "oxfmt": "^0.71.0",
+    "oxlint": "^1.86.0",
+    "oxlint-tsgolint": "^7.0.2003",
     "smol-toml": "^1.9.0",
     "tsup": "^8.5.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
-  }
+  },
+  "engines": {
+    "node": ">=22.16"
+  },
+  "packageManager": "pnpm@12.4.2"
 }

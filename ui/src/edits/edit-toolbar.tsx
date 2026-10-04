@@ -1,17 +1,18 @@
-import type { WritePreview } from "@shared/edits";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
-import { Spinner } from "@/components/ui/spinner";
-import { StatementList } from "./statement-list";
+} from '@/components/ui/sheet';
+import { Spinner } from '@/components/ui/spinner';
+import type { WritePreview } from '@shared/edits';
 
-const changes = (n: number) => `${n} ${n === 1 ? "change" : "changes"}`;
+import { StatementList } from './statement-list';
+
+const changes = (n: number) => `${n} ${n === 1 ? 'change' : 'changes'}`;
 
 /** Appears only while something is staged (T6): apply, discard, or look at the SQL first. */
 export function EditToolbar(props: {

@@ -1,10 +1,10 @@
-import type { PreviewStatement } from "@shared/edits";
-import { inlineParams } from "@/lib/inline-sql";
+import { inlineParams } from '@/lib/inline-sql';
+import type { PreviewStatement } from '@shared/edits';
 
 /** What the dialog and the SQL sheet render: one statement, or a run of safe ones. */
 export type Block =
-  | { kind: "statement"; number: number; dangerous: boolean; text: string }
-  | { kind: "run"; from: number; to: number; text: string };
+  | { kind: 'statement'; number: number; dangerous: boolean; text: string }
+  | { kind: 'run'; from: number; to: number; text: string };
 
 /** Above this many statements, safe ones are shown together to keep the page light. */
 const INDIVIDUAL_LIMIT = 40;
@@ -22,14 +22,14 @@ export function groupStatements(statements: readonly PreviewStatement[]): Block[
     const number = i + 1;
     const last = blocks.at(-1);
     if (merge && !s.dangerous) {
-      if (last?.kind === "run" && last.to === number - 1) {
+      if (last?.kind === 'run' && last.to === number - 1) {
         last.to = number;
         last.text += `\n${show(s)}`;
       } else {
-        blocks.push({ kind: "run", from: number, to: number, text: show(s) });
+        blocks.push({ kind: 'run', from: number, to: number, text: show(s) });
       }
     } else {
-      blocks.push({ kind: "statement", number, dangerous: s.dangerous, text: show(s) });
+      blocks.push({ kind: 'statement', number, dangerous: s.dangerous, text: show(s) });
     }
   });
   return blocks;

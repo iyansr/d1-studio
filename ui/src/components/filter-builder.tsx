@@ -1,10 +1,10 @@
-import { type Filter, type RowsColumn, UNARY_OPS } from "@shared/rows";
-import { FilterIcon, PlusIcon, XIcon } from "lucide-react";
-import { useEffect, useId, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldGroup } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { FilterIcon, PlusIcon, XIcon } from 'lucide-react';
+import { useEffect, useId, useState } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldGroup } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
@@ -12,7 +12,7 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -20,7 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   type Draft,
   draftOf,
@@ -29,7 +29,8 @@ import {
   OP_ITEMS,
   OP_LABELS,
   parseValue,
-} from "@/lib/filters";
+} from '@/lib/filters';
+import { type Filter, type RowsColumn, UNARY_OPS } from '@shared/rows';
 
 /** Per-column filter builder (UI-4). Rows combine with AND. */
 export function FilterBuilder(props: {
@@ -44,24 +45,25 @@ export function FilterBuilder(props: {
   const { columns, filters } = props;
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [showErrors, setShowErrors] = useState(false);
-  const typeOf = (col: string) => columns.find((c) => c.name === col)?.type ?? "";
+  const typeOf = (col: string) => columns.find((c) => c.name === col)?.type ?? '';
   const columnItems = columns.map((c) => ({ value: c.name, label: c.name }));
-  const blank = (col = columns[0]?.name ?? ""): Draft => ({
+  const blank = (col = columns[0]?.name ?? ''): Draft => ({
     key: newKey(),
     col,
-    op: "eq",
-    value: "",
+    op: 'eq',
+    value: '',
   });
 
   // Start from the applied filters each time it opens, from the trigger or
   // from a header menu (which seeds a row for its column).
-  // biome-ignore lint/correctness/useExhaustiveDependencies: only when opening.
+  /* oxlint-disable react-hooks/exhaustive-deps -- only when opening. */
   useEffect(() => {
     if (!props.open) return;
     const current = filters.map(draftOf);
     setDrafts(props.seed ? [...current, blank(props.seed)] : current.length ? current : [blank()]);
     setShowErrors(false);
   }, [props.open, props.seed]);
+  /* oxlint-enable react-hooks/exhaustive-deps */
 
   const update = (key: number, patch: Partial<Draft>) =>
     setDrafts((ds) => ds.map((d) => (d.key === key ? { ...d, ...patch } : d)));
@@ -162,7 +164,7 @@ function FilterRow(props: {
   const { draft, type } = props;
   const id = useId();
   const unary = UNARY_OPS.has(draft.op);
-  const like = draft.op === "like" || draft.op === "nlike";
+  const like = draft.op === 'like' || draft.op === 'nlike';
   const isNumeric = numeric(type) && !like;
   return (
     <Field data-invalid={props.error ? true : undefined} className="gap-1">
@@ -208,12 +210,12 @@ function FilterRow(props: {
             aria-label="Value"
             aria-invalid={props.error ? true : undefined}
             aria-describedby={props.error || like ? `${id}-hint` : undefined}
-            type={isNumeric ? "number" : "text"}
-            step={isNumeric ? "any" : undefined}
-            inputMode={isNumeric ? "decimal" : undefined}
+            type={isNumeric ? 'number' : 'text'}
+            step={isNumeric ? 'any' : undefined}
+            inputMode={isNumeric ? 'decimal' : undefined}
             className="h-7 min-w-0 flex-1"
             value={draft.value}
-            placeholder={like ? "%text%" : isNumeric ? "0" : "value"}
+            placeholder={like ? '%text%' : isNumeric ? '0' : 'value'}
             onChange={(e) => props.onChange({ value: e.target.value })}
           />
         )}
@@ -231,9 +233,9 @@ function FilterRow(props: {
       {(props.error || like) && (
         <FieldDescription
           id={`${id}-hint`}
-          className={props.error ? "text-destructive" : undefined}
+          className={props.error ? 'text-destructive' : undefined}
         >
-          {props.error ?? "% matches any run of characters, _ matches one."}
+          {props.error ?? '% matches any run of characters, _ matches one.'}
         </FieldDescription>
       )}
     </Field>
@@ -248,13 +250,13 @@ export function FilterBadges(props: { filters: Filter[]; onRemove: (index: numbe
       {props.filters.map((f, i) => {
         const value =
           f.value === undefined
-            ? ""
-            : typeof f.value === "object" && f.value !== null
+            ? ''
+            : typeof f.value === 'object' && f.value !== null
               ? f.value.$int
               : JSON.stringify(f.value);
         const text = `${f.col} ${OP_LABELS[f.op]} ${value}`.trim();
         return (
-          // biome-ignore lint/suspicious/noArrayIndexKey: filters can repeat; position is the identity.
+          // Filters can repeat; position is the identity.
           <li key={i}>
             <Badge variant="secondary" className="h-6 gap-1 pr-0.5 font-mono">
               {text}

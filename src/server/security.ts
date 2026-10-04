@@ -1,11 +1,12 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { networkInterfaces } from "node:os";
-import type { MiddlewareHandler } from "hono";
-import { getCookie } from "hono/cookie";
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { networkInterfaces } from 'node:os';
+
+import type { MiddlewareHandler } from 'hono';
+import { getCookie } from 'hono/cookie';
 
 /** Session token: kept in memory only, carried once in the URL, then in a cookie. */
 export function createToken(): string {
-  return randomBytes(32).toString("base64url");
+  return randomBytes(32).toString('base64url');
 }
 
 /** Cookie per port: browsers don't scope cookies by port (D8). */
@@ -15,21 +16,21 @@ export function cookieName(port: number): string {
 
 export function tokensEqual(a: string, b: string): boolean {
   // Hash first so lengths match and timingSafeEqual can't throw.
-  const ha = createHash("sha256").update(a).digest();
-  const hb = createHash("sha256").update(b).digest();
+  const ha = createHash('sha256').update(a).digest();
+  const hb = createHash('sha256').update(b).digest();
   return timingSafeEqual(ha, hb);
 }
 
 export function isLoopback(host: string): boolean {
-  const h = host.replace(/^\[|\]$/g, "").toLowerCase();
-  return h === "localhost" || h === "::1" || /^127(?:\.\d{1,3}){3}$/.test(h);
+  const h = host.replace(/^\[|\]$/g, '').toLowerCase();
+  return h === 'localhost' || h === '::1' || /^127(?:\.\d{1,3}){3}$/.test(h);
 }
 
-const isWildcard = (host: string) => ["0.0.0.0", "::", "[::]"].includes(host);
+const isWildcard = (host: string) => ['0.0.0.0', '::', '[::]'].includes(host);
 
 function hostWithPort(host: string, port: number): string {
-  const bare = host.replace(/^\[|\]$/g, "");
-  return `${bare.includes(":") ? `[${bare}]` : bare}:${port}`.toLowerCase();
+  const bare = host.replace(/^\[|\]$/g, '');
+  return `${bare.includes(':') ? `[${bare}]` : bare}:${port}`.toLowerCase();
 }
 
 /**
@@ -37,17 +38,18 @@ function hostWithPort(host: string, port: number): string {
  * attempt. A wildcard bind also allows each local interface address.
  */
 export function allowedHosts(bindHost: string, port: number): Set<string> {
-  const hosts = ["127.0.0.1", "localhost", "::1"];
+  const hosts = ['127.0.0.1', 'localhost', '::1'];
   if (isWildcard(bindHost)) {
     for (const addrs of Object.values(networkInterfaces())) {
-      for (const a of addrs ?? []) hosts.push(a.address.split("%")[0] ?? a.address);
+      for (const a of addrs ?? []) hosts.push(a.address.split('%')[0] ?? a.address);
     }
   } else {
     hosts.push(bindHost);
   }
   const set = new Set(hosts.map((h) => hostWithPort(h, port)));
-  // Browsers omit the default port.
-  if (port === 80) for (const h of [...set]) set.add(h.replace(/:80$/, ""));
+  // Browsers omit the default port. Iterate a copy: the loop adds to the set.
+  // oxlint-disable-next-line unicorn/no-useless-spread
+  if (port === 80) for (const h of [...set]) set.add(h.replace(/:80$/, ''));
   return set;
 }
 
@@ -73,11 +75,11 @@ const CSP =
 export const securityHeaders: MiddlewareHandler = async (c, next) => {
   await next();
   const h = c.res.headers;
-  h.set("Content-Security-Policy", CSP);
+  h.set('Content-Security-Policy', CSP);
   // The token is in the first URL.
-  h.set("Referrer-Policy", "no-referrer");
-  h.set("X-Content-Type-Options", "nosniff");
-  if (c.req.path.startsWith("/api/")) h.set("Cache-Control", "no-store");
+  h.set('Referrer-Policy', 'no-referrer');
+  h.set('X-Content-Type-Options', 'nosniff');
+  if (c.req.path.startsWith('/api/')) h.set('Cache-Control', 'no-store');
 };
 
 /** Host, then Origin, then session token (01-T8 steps 1–3). */
@@ -96,36 +98,36 @@ export function guard(options: SecurityOptions): MiddlewareHandler {
   return async (c, next) => {
     const { host, port } = options.getBind();
     const hosts = hostsFor(host, port);
-    const isApi = c.req.path.startsWith("/api/");
+    const isApi = c.req.path.startsWith('/api/');
     const deny = (status: 401 | 403, message: string) =>
       isApi || status === 403
         ? c.json({ error: { message } }, status)
         : c.html(UNAUTHORIZED_HTML, status);
 
     // 1. Host: blocks DNS rebinding.
-    const hostHeader = (c.req.header("host") ?? new URL(c.req.url).host).toLowerCase();
-    if (!hosts.has(hostHeader)) return deny(403, "Forbidden host");
+    const hostHeader = (c.req.header('host') ?? new URL(c.req.url).host).toLowerCase();
+    if (!hosts.has(hostHeader)) return deny(403, 'Forbidden host');
 
     // 2. Origin: required for anything but GET/HEAD, and checked when present.
-    const origin = c.req.header("origin");
-    const safeMethod = c.req.method === "GET" || c.req.method === "HEAD";
+    const origin = c.req.header('origin');
+    const safeMethod = c.req.method === 'GET' || c.req.method === 'HEAD';
     if (origin === undefined ? !safeMethod : !isAllowedOrigin(origin, hosts)) {
-      return deny(403, "Forbidden origin");
+      return deny(403, 'Forbidden origin');
     }
 
     // 3. Session token: `?t=` once, then the cookie.
     const name = cookieName(port);
     const url = new URL(c.req.url);
-    const fromQuery = url.searchParams.get("t");
+    const fromQuery = url.searchParams.get('t');
     if (fromQuery !== null) {
-      if (!tokensEqual(fromQuery, options.token)) return deny(401, "Unauthorized");
-      url.searchParams.delete("t");
-      c.header("Set-Cookie", `${name}=${options.token}; HttpOnly; SameSite=Strict; Path=/`);
+      if (!tokensEqual(fromQuery, options.token)) return deny(401, 'Unauthorized');
+      url.searchParams.delete('t');
+      c.header('Set-Cookie', `${name}=${options.token}; HttpOnly; SameSite=Strict; Path=/`);
       return c.redirect(`${url.pathname}${url.search}`, 302);
     }
     const cookie = getCookie(c, name);
     if (cookie === undefined || !tokensEqual(cookie, options.token)) {
-      return deny(401, "Unauthorized. Open the link printed in your terminal.");
+      return deny(401, 'Unauthorized. Open the link printed in your terminal.');
     }
     await next();
   };
@@ -134,7 +136,7 @@ export function guard(options: SecurityOptions): MiddlewareHandler {
 function isAllowedOrigin(origin: string, hosts: Set<string>): boolean {
   try {
     const url = new URL(origin);
-    return url.protocol === "http:" && hosts.has(url.host.toLowerCase());
+    return url.protocol === 'http:' && hosts.has(url.host.toLowerCase());
   } catch {
     return false;
   }

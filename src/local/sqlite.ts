@@ -38,7 +38,7 @@ export async function openSqlite(path: string, { readOnly }: OpenOptions): Promi
 
 async function openNode(path: string, readOnly: boolean): Promise<SqliteConn> {
   silenceSqliteExperimentalWarning();
-  const { DatabaseSync } = await import("node:sqlite");
+  const { DatabaseSync } = await import('node:sqlite');
   const db = new DatabaseSync(path, { readOnly });
   return {
     prepare(sql) {
@@ -61,7 +61,7 @@ async function openNode(path: string, readOnly: boolean): Promise<SqliteConn> {
 }
 
 async function openBun(path: string, readOnly: boolean): Promise<SqliteConn> {
-  const { Database } = await import("bun:sqlite");
+  const { Database } = await import('bun:sqlite');
   const db = readOnly
     ? openBunReadOnly(Database, path)
     : new Database(path, { readwrite: true, create: false, safeIntegers: true });
@@ -84,8 +84,8 @@ async function openBun(path: string, readOnly: boolean): Promise<SqliteConn> {
   };
 }
 
-type BunDatabase = typeof import("bun:sqlite").Database;
-const PROBE = "SELECT 1 FROM sqlite_schema LIMIT 1";
+type BunDatabase = typeof import('bun:sqlite').Database;
+const PROBE = 'SELECT 1 FROM sqlite_schema LIMIT 1';
 
 /**
  * bun:sqlite can't read a WAL database read-only while its `-wal`/`-shm`
@@ -107,7 +107,7 @@ function openBunReadOnly(Database: BunDatabase, path: string) {
   try {
     return openProbed();
   } catch (err) {
-    if ((err as { code?: string }).code !== "SQLITE_CANTOPEN") throw err;
+    if ((err as { code?: string }).code !== 'SQLITE_CANTOPEN') throw err;
   }
   const rw = new Database(path, { readwrite: true, create: false });
   try {
@@ -124,13 +124,14 @@ let warningFilterInstalled = false;
 function silenceSqliteExperimentalWarning() {
   if (warningFilterInstalled) return;
   warningFilterInstalled = true;
+  // oxlint-disable-next-line typescript/unbound-method -- called with `process` as `this` below.
   const emit = process.emitWarning;
   process.emitWarning = function (this: unknown, warning: string | Error, ...rest: unknown[]) {
     const [options] = rest;
     const type =
-      typeof options === "string" ? options : (options as { type?: string } | undefined)?.type;
-    const message = typeof warning === "string" ? warning : warning.message;
-    if (type === "ExperimentalWarning" && message.includes("SQLite")) return;
+      typeof options === 'string' ? options : (options as { type?: string } | undefined)?.type;
+    const message = typeof warning === 'string' ? warning : warning.message;
+    if (type === 'ExperimentalWarning' && message.includes('SQLite')) return;
     return (emit as (...args: unknown[]) => void).call(process, warning, ...rest);
   } as typeof process.emitWarning;
 }

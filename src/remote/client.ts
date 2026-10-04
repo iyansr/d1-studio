@@ -1,7 +1,7 @@
-import type { Secret } from "./secret";
+import type { Secret } from './secret';
 
 /** The only host the token is ever sent to. */
-export const API_BASE = "https://api.cloudflare.com/client/v4";
+export const API_BASE = 'https://api.cloudflare.com/client/v4';
 
 /** A 403 from D1: the token is valid but not scoped for D1. */
 export const NO_D1_ACCESS = 'Token lacks D1 access (needs "D1 Read"; "D1 Edit" for --write).';
@@ -57,7 +57,7 @@ export interface D1Target {
  * status of 0 means the API was never reached.
  */
 export class D1ApiError extends Error {
-  override name = "D1ApiError";
+  override name = 'D1ApiError';
   constructor(
     message: string,
     readonly status: number,
@@ -108,7 +108,7 @@ export class D1Client {
     stmt: D1Statement,
     options: { retry: boolean },
   ): Promise<D1RawResult[]> {
-    const body = await this.request<D1RawResult[]>("POST", rawPath(target), stmt, options.retry);
+    const body = await this.request<D1RawResult[]>('POST', rawPath(target), stmt, options.retry);
     return body.result ?? [];
   }
 
@@ -119,7 +119,7 @@ export class D1Client {
     options: { retry: boolean },
   ): Promise<D1RawResult[]> {
     const body = await this.request<D1RawResult[]>(
-      "POST",
+      'POST',
       rawPath(target),
       { batch: stmts },
       options.retry,
@@ -128,7 +128,7 @@ export class D1Client {
   }
 
   listAccounts(): Promise<Account[]> {
-    return this.paginate<Account>("/accounts", 50);
+    return this.paginate<Account>('/accounts', 50);
   }
 
   listDatabases(accountId: string): Promise<D1Database[]> {
@@ -137,14 +137,14 @@ export class D1Client {
 
   async getDatabase(accountId: string, id: string): Promise<D1Database> {
     const path = `/accounts/${seg(accountId)}/d1/database/${seg(id)}`;
-    return (await this.request<D1Database>("GET", path, undefined, true)).result;
+    return (await this.request<D1Database>('GET', path, undefined, true)).result;
   }
 
   private async paginate<T>(path: string, perPage: number): Promise<T[]> {
     const all: T[] = [];
     for (let page = 1; page <= MAX_PAGES; page++) {
       const body = await this.request<T[]>(
-        "GET",
+        'GET',
         `${path}?page=${page}&per_page=${perPage}`,
         undefined,
         true,
@@ -162,7 +162,7 @@ export class D1Client {
   }
 
   private async request<T>(
-    method: "GET" | "POST",
+    method: 'GET' | 'POST',
     path: string,
     body: unknown,
     retry: boolean,
@@ -174,7 +174,7 @@ export class D1Client {
           method,
           headers: {
             Authorization: `Bearer ${this.options.token.reveal()}`,
-            ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+            ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
           },
           body: body === undefined ? undefined : JSON.stringify(body),
           signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -186,7 +186,7 @@ export class D1Client {
       const envelope = (await res.json().catch(() => undefined)) as Envelope<T> | undefined;
       if (res.ok && envelope && envelope.success !== false) return envelope;
 
-      const retryAfter = parseRetryAfter(res.headers.get("retry-after"));
+      const retryAfter = parseRetryAfter(res.headers.get('retry-after'));
       if (retry && (res.status === 429 || res.status >= 500) && attempt < MAX_RETRIES) {
         const wait = retryAfter !== undefined ? retryAfter * 1000 : this.backoff(attempt);
         if (wait <= MAX_WAIT_MS) {
@@ -194,12 +194,12 @@ export class D1Client {
           continue;
         }
       }
-      const first = envelope?.errors?.find((e) => typeof e.message === "string");
+      const first = envelope?.errors?.find((e) => typeof e.message === 'string');
       const message =
         envelope?.errors
           ?.map((e) => e.message)
           .filter(Boolean)
-          .join("; ") || `Cloudflare API request failed (HTTP ${res.status}).`;
+          .join('; ') || `Cloudflare API request failed (HTTP ${res.status}).`;
       throw new D1ApiError(message, res.status, first?.code, retryAfter);
     }
   }
@@ -218,14 +218,14 @@ const seg = (value: string) => encodeURIComponent(value);
 
 /** Seconds from a `Retry-After` value (delta-seconds or an HTTP date). */
 export function parseRetryAfter(value: string | null, now = Date.now()): number | undefined {
-  if (value === null || value.trim() === "") return undefined;
+  if (value === null || value.trim() === '') return undefined;
   if (/^\d+$/.test(value.trim())) return Number(value.trim());
   const date = Date.parse(value);
   return Number.isNaN(date) ? undefined : Math.max(0, Math.ceil((date - now) / 1000));
 }
 
 function networkError(err: unknown): D1ApiError {
-  if (err instanceof Error && err.name === "TimeoutError") {
+  if (err instanceof Error && err.name === 'TimeoutError') {
     return new D1ApiError(`The Cloudflare API didn't answer within ${TIMEOUT_MS / 1000} s.`, 0);
   }
   const cause = err instanceof Error && err.cause instanceof Error ? err.cause.message : undefined;

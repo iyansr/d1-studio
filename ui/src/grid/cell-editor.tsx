@@ -1,16 +1,17 @@
-import type { CellValue } from "@shared/edits";
-import { BanIcon } from "lucide-react";
-import { type KeyboardEvent, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { type InputKind, parseInput } from "@/edits/values";
+import { BanIcon } from 'lucide-react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
-const isMac = typeof navigator !== "undefined" && /Mac|iP(hone|ad)/.test(navigator.platform);
+import { Button } from '@/components/ui/button';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { type InputKind, parseInput } from '@/edits/values';
+import type { CellValue } from '@shared/edits';
 
-export type CommitKey = "enter" | "tab" | "blur";
-export type CancelReason = CommitKey | "escape";
+const isMac = typeof navigator !== 'undefined' && /Mac|iP(hone|ad)/.test(navigator.platform);
+
+export type CommitKey = 'enter' | 'tab' | 'blur';
+export type CancelReason = CommitKey | 'escape';
 
 /**
  * The in-cell editor (T6): an `InputGroup` with a "Set NULL" button. Enter,
@@ -49,7 +50,7 @@ export function CellEditor(props: {
       return true;
     }
     const parsed = el.validity.badInput
-      ? ({ ok: false, message: "Enter a number." } as const)
+      ? ({ ok: false, message: 'Enter a number.' } as const)
       : parseInput(kind, text);
     if (!parsed.ok) {
       setInvalid(parsed.message);
@@ -63,10 +64,10 @@ export function CellEditor(props: {
   const setNull = () => {
     if (done.current) return;
     done.current = true;
-    latest.current.onCommit(null, "enter");
+    latest.current.onCommit(null, 'enter');
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs on mount and unmount only.
+  /* oxlint-disable react-hooks/exhaustive-deps -- runs on mount and unmount only. */
   useEffect(() => {
     const el = input.current;
     if (!el) return;
@@ -74,27 +75,28 @@ export function CellEditor(props: {
     // Typing started the edit: the caret goes after that character. Otherwise the
     // text is selected, so typing replaces it. (Number inputs have no caret to set.)
     if (!props.seeded) el.select();
-    else if (kind === "text") el.setSelectionRange(el.value.length, el.value.length);
+    else if (kind === 'text') el.setSelectionRange(el.value.length, el.value.length);
     return () => {
       // Scrolled out of view or the row went away: keep what was typed.
-      if (!done.current && input.current) finish("blur");
+      if (!done.current && input.current) finish('blur');
     };
   }, []);
+  /* oxlint-enable react-hooks/exhaustive-deps */
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Escape") {
+    if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
       done.current = true;
-      onCancel("escape");
-    } else if (event.key === "Enter") {
+      onCancel('escape');
+    } else if (event.key === 'Enter') {
       event.preventDefault();
-      finish("enter");
-    } else if (event.key === "Tab" && !event.shiftKey) {
+      finish('enter');
+    } else if (event.key === 'Tab' && !event.shiftKey) {
       event.preventDefault();
-      finish("tab");
+      finish('tab');
     } else if (
-      (event.key === "n" || event.key === "N") &&
+      (event.key === 'n' || event.key === 'N') &&
       event.shiftKey &&
       (event.metaKey || event.ctrlKey)
     ) {
@@ -107,18 +109,18 @@ export function CellEditor(props: {
     <InputGroup
       ref={group}
       data-editor=""
-      className="h-full rounded-none border-0 bg-background ring-2 ring-ring ring-inset has-[[data-slot][aria-invalid=true]]:bg-destructive/10 has-[[data-slot][aria-invalid=true]]:ring-2 has-[[data-slot][aria-invalid=true]]:ring-destructive has-[[data-slot=input-group-control]:focus-visible]:ring-2"
+      className="h-full rounded-none border-0 bg-background ring-2 ring-ring ring-inset has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot][aria-invalid=true]]:bg-destructive/10 has-[[data-slot][aria-invalid=true]]:ring-2 has-[[data-slot][aria-invalid=true]]:ring-destructive"
       onBlur={(event) => {
         // Moving to "Set NULL" or its tooltip isn't leaving the editor.
         if (group.current?.contains(event.relatedTarget as Node | null)) return;
-        if (!finish("blur")) input.current?.focus();
+        if (!finish('blur')) input.current?.focus();
       }}
     >
       <InputGroupInput
         ref={input}
         type={kind}
         // A number input's own spinner arrows and step would only get in the way.
-        step={kind === "number" ? "any" : undefined}
+        step={kind === 'number' ? 'any' : undefined}
         defaultValue={props.initial}
         aria-label={props.label}
         aria-invalid={invalid !== null || undefined}
@@ -148,9 +150,9 @@ export function CellEditor(props: {
             <BanIcon />
           </TooltipTrigger>
           <TooltipContent>
-            Set NULL{" "}
+            Set NULL{' '}
             <KbdGroup>
-              <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
+              <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>
               <Kbd>⇧</Kbd>
               <Kbd>N</Kbd>
             </KbdGroup>

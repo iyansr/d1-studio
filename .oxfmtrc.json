@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "singleQuote": true,
+  "jsxSingleQuote": false,
+  "sortImports": {
+    "internalPattern": ["@/", "@shared/"]
+  },
+  "sortPackageJson": true,
+  "sortTailwindcss": {
+    "stylesheet": "./ui/src/index.css",
+    "functions": ["cn", "cva"]
+  },
+  "ignorePatterns": [
+    "ui/src/components/ui/**",
+    "docs/**",
+    "pnpm-lock.yaml",
+    "test/fixtures/**/*.json*",
+    "e2e/fixtures/**/*.json*"
+  ],
+  "overrides": [
+    {
+      "files": ["*.css"],
+      "options": {
+        "singleQuote": false
+      }
+    }
+  ]
+}

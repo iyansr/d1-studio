@@ -6,7 +6,7 @@ export function formatCount(n: number): string {
 
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
-  const units = ["KB", "MB", "GB", "TB"];
+  const units = ['KB', 'MB', 'GB', 'TB'];
   let value = bytes / 1024;
   let unit = 0;
   while (value >= 1024 && unit < units.length - 1) {
@@ -16,15 +16,15 @@ export function formatBytes(bytes: number): string {
   return `${value < 10 ? value.toFixed(1) : Math.round(value)} ${units[unit]}`;
 }
 
-const relative = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+const relative = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
 const STEPS: [Intl.RelativeTimeFormatUnit, number][] = [
-  ["second", 60],
-  ["minute", 60],
-  ["hour", 24],
-  ["day", 7],
-  ["week", 4.35],
-  ["month", 12],
-  ["year", Number.POSITIVE_INFINITY],
+  ['second', 60],
+  ['minute', 60],
+  ['hour', 24],
+  ['day', 7],
+  ['week', 4.35],
+  ['month', 12],
+  ['year', Number.POSITIVE_INFINITY],
 ];
 
 /** "3 minutes ago". */

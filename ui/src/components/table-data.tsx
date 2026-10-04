@@ -1,12 +1,4 @@
-import type { BatchResponse, Confirm, EditOp, WritePreview } from "@shared/edits";
-import {
-  type Filter,
-  PAGE_SIZES,
-  type PageSize,
-  ROWID_COLUMN,
-  type RowsColumn,
-} from "@shared/rows";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -15,12 +7,13 @@ import {
   RefreshCwIcon,
   TableIcon,
   Trash2Icon,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { ErrorAlert } from "@/components/error-alert";
-import { FilterBadges, FilterBuilder } from "@/components/filter-builder";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+
+import { ErrorAlert } from '@/components/error-alert';
+import { FilterBadges, FilterBuilder } from '@/components/filter-builder';
+import { Button } from '@/components/ui/button';
 import {
   Empty,
   EmptyContent,
@@ -28,18 +21,26 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
-import { Spinner } from "@/components/ui/spinner";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { WriteConfirmDialog } from "@/edits/confirm-dialog";
-import { EditToolbar, SqlPreviewSheet } from "@/edits/edit-toolbar";
-import { identifyRow } from "@/edits/row-key";
-import { isInsertId } from "@/edits/staged-edits";
-import { useStagedEdits } from "@/edits/useStagedEdits";
-import { DataGrid, type GridEditing } from "@/grid/DataGrid";
-import { ApiError, api, type Meta, queries, type RowsRequest } from "@/lib/api";
-import { formatCount } from "@/lib/format";
-import { useUrlState } from "@/lib/url-state";
+} from '@/components/ui/empty';
+import { Spinner } from '@/components/ui/spinner';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { WriteConfirmDialog } from '@/edits/confirm-dialog';
+import { EditToolbar, SqlPreviewSheet } from '@/edits/edit-toolbar';
+import { identifyRow } from '@/edits/row-key';
+import { isInsertId } from '@/edits/staged-edits';
+import { useStagedEdits } from '@/edits/useStagedEdits';
+import { DataGrid, type GridEditing } from '@/grid/DataGrid';
+import { ApiError, api, type Meta, queries, type RowsRequest } from '@/lib/api';
+import { formatCount } from '@/lib/format';
+import { useUrlState } from '@/lib/url-state';
+import type { BatchResponse, Confirm, EditOp, WritePreview } from '@shared/edits';
+import {
+  type Filter,
+  PAGE_SIZES,
+  type PageSize,
+  ROWID_COLUMN,
+  type RowsColumn,
+} from '@shared/rows';
 
 /** The Data tab: server-paged, sorted and filtered rows of one table or view. */
 export function TableData({ table, meta }: { table: string; meta: Meta }) {
@@ -66,7 +67,7 @@ export function TableData({ table, meta }: { table: string; meta: Meta }) {
   const listed =
     tables.data?.tables.find((t) => t.name === table)?.rows ?? counts.data?.counts[table];
   const knownTotal =
-    url.filters.length === 0 && typeof listed === "number" ? listed : totals[filterKey];
+    url.filters.length === 0 && typeof listed === 'number' ? listed : totals[filterKey];
 
   const request: RowsRequest = {
     limit: url.size,
@@ -83,7 +84,7 @@ export function TableData({ table, meta }: { table: string; meta: Meta }) {
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [confirming, setConfirming] = useState<Pending2 | null>(null);
   const [sqlPreview, setSqlPreview] = useState<WritePreview | null>(null);
-  const editable = !readOnly && page !== undefined && page.key.kind !== "none";
+  const editable = !readOnly && page !== undefined && page.key.kind !== 'none';
   const readonlyColumns = useMemo(
     () =>
       new Set(schema.data?.columns.filter((c) => c.generated || c.hidden).map((c) => c.name) ?? []),
@@ -102,7 +103,7 @@ export function TableData({ table, meta }: { table: string; meta: Meta }) {
   }, [editable, page, store, staged, readonlyColumns, selected]);
   // Selected rows belong to the page they were picked on.
   const view = JSON.stringify([url.page, url.size, url.sort, url.filters]);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: clear when the view changes.
+  // Clear when the view changes.
   useEffect(() => setSelected(new Set()), [view]);
 
   useEffect(() => {
@@ -114,21 +115,21 @@ export function TableData({ table, meta }: { table: string; meta: Meta }) {
   const total =
     knownTotal ?? (page && !page.hasMore && !rows.isPlaceholderData ? offset + count : undefined);
   const hiddenColumns = useMemo(
-    () => [...(page?.key.kind === "rowid" ? [ROWID_COLUMN] : []), ...hidden],
+    () => [...(page?.key.kind === 'rowid' ? [ROWID_COLUMN] : []), ...hidden],
     [page?.key.kind, hidden],
   );
 
   const refresh = () => {
-    void client.invalidateQueries({ queryKey: ["rows", table] });
-    void client.invalidateQueries({ queryKey: ["tables"] });
+    void client.invalidateQueries({ queryKey: ['rows', table] });
+    void client.invalidateQueries({ queryKey: ['tables'] });
     setTotals({});
   };
 
   const preview = useMutation({
-    mutationFn: (v: Pending & { purpose: "confirm" | "show" }) =>
+    mutationFn: (v: Pending & { purpose: 'confirm' | 'show' }) =>
       api.batchPreview({ table, ops: v.ops }),
     onSuccess: (data, v) => {
-      if (v.purpose === "show") setSqlPreview(data);
+      if (v.purpose === 'show') setSqlPreview(data);
       else setConfirming({ preview: data, ops: v.ops, ids: v.ids });
     },
     onError: (error) => toast.error(error.message),
@@ -144,15 +145,15 @@ export function TableData({ table, meta }: { table: string; meta: Meta }) {
       toast.success(applied(result));
       if (result.warnings.length > 0) {
         toast.warning(
-          `${result.warnings.length} ${result.warnings.length === 1 ? "change" : "changes"} matched no row: the row was changed or deleted since it was loaded.`,
+          `${result.warnings.length} ${result.warnings.length === 1 ? 'change' : 'changes'} matched no row: the row was changed or deleted since it was loaded.`,
         );
       }
       refresh();
-      void client.invalidateQueries({ queryKey: ["table-counts"] });
-      void client.invalidateQueries({ queryKey: ["usage"] });
+      void client.invalidateQueries({ queryKey: ['table-counts'] });
+      void client.invalidateQueries({ queryKey: ['usage'] });
     },
     onError: (error, v) => {
-      void client.invalidateQueries({ queryKey: ["usage"] });
+      void client.invalidateQueries({ queryKey: ['usage'] });
       const api = error instanceof ApiError ? error : undefined;
       // The server wants a confirmation we didn't send.
       if (api?.confirmation) {
@@ -173,10 +174,10 @@ export function TableData({ table, meta }: { table: string; meta: Meta }) {
     if (built.ops.length === 0) return;
     store.markFailed(null);
     // Local runs at once; remote shows the SQL first (T7).
-    if (meta.mode === "remote") preview.mutate({ ...built, purpose: "confirm" });
+    if (meta.mode === 'remote') preview.mutate({ ...built, purpose: 'confirm' });
     else send.mutate(built);
   };
-  const showSql = () => preview.mutate({ ...store.buildOps(), purpose: "show" });
+  const showSql = () => preview.mutate({ ...store.buildOps(), purpose: 'show' });
   const discard = () => {
     store.discardAll();
     setSelected(new Set());
@@ -212,7 +213,7 @@ export function TableData({ table, meta }: { table: string; meta: Meta }) {
         {hidden.length > 0 && (
           <Button variant="ghost" size="sm" onClick={() => setHidden([])}>
             <EyeIcon data-icon="inline-start" />
-            Show {hidden.length} hidden {hidden.length === 1 ? "column" : "columns"}
+            Show {hidden.length} hidden {hidden.length === 1 ? 'column' : 'columns'}
           </Button>
         )}
         {editable && (
@@ -224,14 +225,14 @@ export function TableData({ table, meta }: { table: string; meta: Meta }) {
             {selected.size > 0 && (
               <Button variant="destructive" size="sm" onClick={deleteSelected}>
                 <Trash2Icon data-icon="inline-start" />
-                Delete {selected.size} {selected.size === 1 ? "row" : "rows"}
+                Delete {selected.size} {selected.size === 1 ? 'row' : 'rows'}
               </Button>
             )}
           </div>
         )}
         {!readOnly && page && !editable && (
           <span className="text-xs text-muted-foreground">
-            {schema.data?.type === "view"
+            {schema.data?.type === 'view'
               ? "Views can't be edited."
               : "No primary key or rowid, so rows can't be edited."}
           </span>
@@ -304,7 +305,7 @@ export function TableData({ table, meta }: { table: string; meta: Meta }) {
 
       <WriteConfirmDialog
         preview={confirming?.preview ?? null}
-        database={meta.database?.name ?? ""}
+        database={meta.database?.name ?? ''}
         account={meta.account}
         atomic
         running={send.isPending && send.variables?.confirm !== undefined}
@@ -345,12 +346,12 @@ export function TableData({ table, meta }: { table: string; meta: Meta }) {
           ))}
         </ToggleGroup>
         <span className="text-muted-foreground tabular-nums" aria-live="polite">
-          {count > 0 ? `Rows ${formatCount(offset + 1)}–${formatCount(offset + count)}` : "No rows"}
+          {count > 0 ? `Rows ${formatCount(offset + 1)}–${formatCount(offset + count)}` : 'No rows'}
           {total !== undefined && ` of ${formatCount(total)}`}
         </span>
         {total === undefined && count > 0 && (
           <Button variant="link" size="sm" className="px-0" onClick={() => setCounting(true)}>
-            {counting ? "counting…" : "count"}
+            {counting ? 'counting…' : 'count'}
           </Button>
         )}
         {rows.isFetching && !rows.isPending && <Spinner />}
@@ -386,10 +387,10 @@ function NoRows(props: {
   onFirstPage: () => void;
 }) {
   const [title, description] = props.pastEnd
-    ? ["Past the last page", "There are no rows on this page."]
+    ? ['Past the last page', 'There are no rows on this page.']
     : props.filtered
-      ? ["No matching rows", "No rows match these filters."]
-      : ["No rows", "This table is empty."];
+      ? ['No matching rows', 'No rows match these filters.']
+      : ['No rows', 'This table is empty.'];
   return (
     <Empty className="absolute inset-x-0 top-10">
       <EmptyHeader>
@@ -406,7 +407,7 @@ function NoRows(props: {
             size="sm"
             onClick={props.pastEnd ? props.onFirstPage : props.onClearFilters}
           >
-            {props.pastEnd ? "Go to the first page" : "Clear filters"}
+            {props.pastEnd ? 'Go to the first page' : 'Clear filters'}
           </Button>
         </EmptyContent>
       )}
@@ -425,13 +426,13 @@ interface Pending2 extends Pending {
   preview: WritePreview;
 }
 
-const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
 
 function applied(result: BatchResponse): string {
   const parts = [
-    result.updated > 0 && `${plural(result.updated, "row")} updated`,
-    result.inserted > 0 && `${plural(result.inserted, "row")} inserted`,
-    result.deleted > 0 && `${plural(result.deleted, "row")} deleted`,
+    result.updated > 0 && `${plural(result.updated, 'row')} updated`,
+    result.inserted > 0 && `${plural(result.inserted, 'row')} inserted`,
+    result.deleted > 0 && `${plural(result.deleted, 'row')} deleted`,
   ].filter(Boolean);
-  return `Applied ${plural(result.statements, "change")}: ${parts.join(", ") || "no rows changed"}.`;
+  return `Applied ${plural(result.statements, 'change')}: ${parts.join(', ') || 'no rows changed'}.`;
 }

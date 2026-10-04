@@ -1,40 +1,41 @@
-import type { Confirm, WritePreview } from "@shared/edits";
-import type { QueryNotice } from "@shared/notices";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { InfoIcon, PlayIcon, SquareTerminalIcon } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
-import { ErrorAlert } from "@/components/error-alert";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { InfoIcon, PlayIcon, SquareTerminalIcon } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+
+import { ErrorAlert } from '@/components/error-alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Spinner } from "@/components/ui/spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SqlEditor, type SqlEditorHandle, sqlNamespace } from "@/editor/sql-editor";
-import { WriteConfirmDialog } from "@/edits/confirm-dialog";
-import { DataGrid } from "@/grid/DataGrid";
-import { ApiError, api, type Meta, type QueryResult, queries } from "@/lib/api";
-import { formatCount, formatDuration } from "@/lib/format";
-import { readStored, writeStored } from "@/lib/storage";
+} from '@/components/ui/empty';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SqlEditor, type SqlEditorHandle, sqlNamespace } from '@/editor/sql-editor';
+import { WriteConfirmDialog } from '@/edits/confirm-dialog';
+import { DataGrid } from '@/grid/DataGrid';
+import { ApiError, api, type Meta, type QueryResult, queries } from '@/lib/api';
+import { formatCount, formatDuration } from '@/lib/format';
+import { readStored, writeStored } from '@/lib/storage';
+import type { Confirm, WritePreview } from '@shared/edits';
+import type { QueryNotice } from '@shared/notices';
 
-const isMac = typeof navigator !== "undefined" && /Mac|iP(hone|ad)/.test(navigator.platform);
+const isMac = typeof navigator !== 'undefined' && /Mac|iP(hone|ad)/.test(navigator.platform);
 const EMPTY_SCHEMA = {};
 
 type Outcome =
-  | { kind: "results"; results: QueryResult[]; notice?: QueryNotice; elapsedMs: number }
-  | { kind: "error"; error: Error; sql: string };
+  | { kind: 'results'; results: QueryResult[]; notice?: QueryNotice; elapsedMs: number }
+  | { kind: 'error'; error: Error; sql: string };
 
 /** The SQL tab (UI-7, UI-8): editor above, one results tab per statement below. */
 export function SqlView({ meta }: { meta: Meta }) {
-  const storageKey = `sql:${meta.database?.id ?? meta.database?.name ?? "db"}`;
-  const [initial] = useState(() => readStored(storageKey, ""));
+  const storageKey = `sql:${meta.database?.id ?? meta.database?.name ?? 'db'}`;
+  const [initial] = useState(() => readStored(storageKey, ''));
   const editor = useRef<SqlEditorHandle | null>(null);
   const client = useQueryClient();
   const schema = useQuery(queries.schemaAll());
@@ -43,7 +44,7 @@ export function SqlView({ meta }: { meta: Meta }) {
     [schema.data],
   );
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [tab, setTab] = useState("0");
+  const [tab, setTab] = useState('0');
   const saveTimer = useRef<number | undefined>(undefined);
 
   // Remote write mode: destructive SQL comes back as a 409 with the statements,
@@ -54,10 +55,10 @@ export function SqlView({ meta }: { meta: Meta }) {
       api.query(sql, undefined, confirm),
     onSuccess: ({ results, notice, elapsedMs }) => {
       setPending(null);
-      setOutcome({ kind: "results", results, notice, elapsedMs });
+      setOutcome({ kind: 'results', results, notice, elapsedMs });
       setTab(String(Math.max(0, results.length - 1)));
       if (results.some((r) => r.columns.length === 0)) invalidate();
-      void client.invalidateQueries({ queryKey: ["usage"] });
+      void client.invalidateQueries({ queryKey: ['usage'] });
     },
     onError: (error, { sql, confirm }) => {
       const preview = error instanceof ApiError ? error.confirmation : undefined;
@@ -68,7 +69,7 @@ export function SqlView({ meta }: { meta: Meta }) {
       // Statements before the failing one may have written.
       invalidate();
       // From the dialog, the error is shown there, beside the SQL.
-      if (confirm === undefined) setOutcome({ kind: "error", error, sql });
+      if (confirm === undefined) setOutcome({ kind: 'error', error, sql });
     },
   });
   const dialogError =
@@ -76,12 +77,12 @@ export function SqlView({ meta }: { meta: Meta }) {
       ? run.error
       : null;
   const invalidate = () => {
-    for (const key of ["tables", "rows", "schema", "schema-all", "usage"]) {
+    for (const key of ['tables', 'rows', 'schema', 'schema-all', 'usage']) {
       void client.invalidateQueries({ queryKey: [key] });
     }
   };
   const execute = (sql: string) => {
-    if (sql.trim() === "" || run.isPending) return;
+    if (sql.trim() === '' || run.isPending) return;
     run.mutate({ sql });
   };
 
@@ -92,7 +93,7 @@ export function SqlView({ meta }: { meta: Meta }) {
           size="sm"
           disabled={run.isPending}
           onClick={() => {
-            execute(editor.current?.runnable() ?? "");
+            execute(editor.current?.runnable() ?? '');
             editor.current?.focus();
           }}
         >
@@ -103,7 +104,7 @@ export function SqlView({ meta }: { meta: Meta }) {
           )}
           Run
           <KbdGroup className="ml-1">
-            <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
+            <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>
             <Kbd>↵</Kbd>
           </KbdGroup>
         </Button>
@@ -131,7 +132,7 @@ export function SqlView({ meta }: { meta: Meta }) {
       </ResizablePanelGroup>
       <WriteConfirmDialog
         preview={pending?.preview ?? null}
-        database={meta.database?.name ?? ""}
+        database={meta.database?.name ?? ''}
         account={meta.account}
         atomic={false}
         running={run.isPending && run.variables?.confirm !== undefined}
@@ -166,13 +167,13 @@ function Results(props: {
       </Empty>
     );
   }
-  if (outcome.kind === "error") {
+  if (outcome.kind === 'error') {
     const { error, sql } = outcome;
     const index = error instanceof ApiError ? error.statementIndex : undefined;
     return (
       <div className="p-4">
         <ErrorAlert
-          title={index !== undefined ? `Statement ${index + 1} failed` : "The query failed"}
+          title={index !== undefined ? `Statement ${index + 1} failed` : 'The query failed'}
           error={error}
           onRetry={() => props.onRetry(sql)}
         />
@@ -182,7 +183,7 @@ function Results(props: {
   const { results, notice, elapsedMs } = outcome;
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {notice?.kind === "auto-limit" && (
+      {notice?.kind === 'auto-limit' && (
         <div className="px-3 pt-3">
           <Alert>
             <InfoIcon />
@@ -202,11 +203,11 @@ function Results(props: {
           <div className="overflow-x-auto border-b px-3 py-1.5">
             <TabsList>
               {results.map((r, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: one tab per statement, in order.
+                // One tab per statement, in order.
                 <TabsTrigger key={i} value={String(i)}>
                   Result {i + 1}
                   <span className="text-muted-foreground tabular-nums">
-                    {r.columns.length > 0 ? formatCount(r.rows.length) : "✓"}
+                    {r.columns.length > 0 ? formatCount(r.rows.length) : '✓'}
                   </span>
                 </TabsTrigger>
               ))}
@@ -214,12 +215,12 @@ function Results(props: {
           </div>
         )}
         {results.map((r, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: one panel per statement, in order.
+          // One panel per statement, in order.
           <TabsContent key={i} value={String(i)} className="flex min-h-0 flex-col">
             {r.columns.length > 0 ? (
               <DataGrid
                 label={`Result ${i + 1}`}
-                columns={r.columns.map((name) => ({ name, type: "" }))}
+                columns={r.columns.map((name) => ({ name, type: '' }))}
                 rows={r.rows}
                 empty={
                   <p className="p-4 text-sm text-muted-foreground">
@@ -229,7 +230,7 @@ function Results(props: {
               />
             ) : (
               <p className="p-4 text-sm text-muted-foreground">
-                Done. {formatCount(r.changes ?? 0)} {r.changes === 1 ? "row" : "rows"} changed.
+                Done. {formatCount(r.changes ?? 0)} {r.changes === 1 ? 'row' : 'rows'} changed.
               </p>
             )}
             <StatusBar result={r} elapsedMs={elapsedMs} />
@@ -246,7 +247,7 @@ function StatusBar({ result, elapsedMs }: { result: QueryResult; elapsedMs: numb
   const remote = result.rowsRead !== undefined;
   const parts = [
     result.columns.length > 0 &&
-      `${formatCount(result.rows.length)} ${result.rows.length === 1 ? "row" : "rows"}`,
+      `${formatCount(result.rows.length)} ${result.rows.length === 1 ? 'row' : 'rows'}`,
     formatDuration(result.durationMs),
     result.changes !== undefined && `${formatCount(result.changes)} changed`,
     result.rowsRead !== undefined && `${formatCount(result.rowsRead)} read`,

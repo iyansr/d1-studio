@@ -4,12 +4,12 @@ import {
   closeBrackets,
   closeBracketsKeymap,
   completionKeymap,
-} from "@codemirror/autocomplete";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { SQLite, type SQLNamespace, sql } from "@codemirror/lang-sql";
-import { bracketMatching, indentOnInput } from "@codemirror/language";
-import { highlightSelectionMatches, search, searchKeymap } from "@codemirror/search";
-import { Compartment, EditorState, Prec } from "@codemirror/state";
+} from '@codemirror/autocomplete';
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { SQLite, type SQLNamespace, sql } from '@codemirror/lang-sql';
+import { bracketMatching, indentOnInput } from '@codemirror/language';
+import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
+import { Compartment, EditorState, Prec } from '@codemirror/state';
 import {
   drawSelection,
   EditorView,
@@ -19,10 +19,12 @@ import {
   keymap,
   lineNumbers,
   placeholder,
-} from "@codemirror/view";
-import { type RefObject, useEffect, useRef } from "react";
-import type { SchemaTable } from "@/lib/api";
-import { shadcnTheme } from "./theme";
+} from '@codemirror/view';
+import { type RefObject, useEffect, useRef } from 'react';
+
+import type { SchemaTable } from '@/lib/api';
+
+import { shadcnTheme } from './theme';
 
 export interface SqlEditorHandle {
   /** The selection if there is one, otherwise the whole document. */
@@ -35,7 +37,7 @@ export function sqlNamespace(tables: SchemaTable[]): SQLNamespace {
   return Object.fromEntries(
     tables.map((t) => [
       t.name,
-      t.columns.map((c) => ({ label: c.name, type: "property", detail: c.type || undefined })),
+      t.columns.map((c) => ({ label: c.name, type: 'property', detail: c.type || undefined })),
     ]),
   );
 }
@@ -59,7 +61,7 @@ export function SqlEditor(props: {
   const latest = useRef(props);
   latest.current = props;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the editor is created once.
+  /* oxlint-disable react-hooks/exhaustive-deps -- the editor is created once. */
   useEffect(() => {
     if (!parent.current) return;
     const runnable = (state: EditorState) => {
@@ -74,14 +76,14 @@ export function SqlEditor(props: {
           Prec.highest(
             keymap.of([
               {
-                key: "Mod-Enter",
+                key: 'Mod-Enter',
                 run: (v) => {
                   latest.current.onRun(runnable(v.state));
                   return true;
                 },
               },
               // Returns false with no completion open, so Tab still moves focus.
-              { key: "Tab", run: acceptCompletion },
+              { key: 'Tab', run: acceptCompletion },
             ]),
           ),
           lineNumbers(),
@@ -106,8 +108,8 @@ export function SqlEditor(props: {
           language.current.of(
             sql({ dialect: SQLite, schema: props.schema, upperCaseKeywords: true }),
           ),
-          placeholder("SELECT * FROM …"),
-          EditorView.contentAttributes.of({ "aria-label": "SQL editor" }),
+          placeholder('SELECT * FROM …'),
+          EditorView.contentAttributes.of({ 'aria-label': 'SQL editor' }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) latest.current.onChange(update.state.doc.toString());
           }),
@@ -125,6 +127,7 @@ export function SqlEditor(props: {
       view.current = null;
     };
   }, []);
+  /* oxlint-enable react-hooks/exhaustive-deps */
 
   // Autocomplete follows the schema (it changes after DDL).
   useEffect(() => {

@@ -1,15 +1,15 @@
-import { isHiddenTable } from "../shared/tables";
-import type { Cell, ParamValue } from "../shared/values";
-import { quoteIdent, quoteString } from "../sql/ident";
-import { isKeyword, tokenize } from "../sql/tokenize";
-import type { QueryResult } from "./types";
+import { isHiddenTable } from '../shared/tables';
+import type { Cell, ParamValue } from '../shared/values';
+import { quoteIdent, quoteString } from '../sql/ident';
+import { isKeyword, tokenize } from '../sql/tokenize';
+import type { QueryResult } from './types';
 
 /** Introspection runs over `Driver.query`, so both drivers share it (D5). */
 export type QueryFn = (sql: string, params?: ParamValue[]) => Promise<QueryResult[]>;
 
 export interface TableInfo {
   name: string;
-  type: "table" | "view" | "virtual" | "shadow";
+  type: 'table' | 'view' | 'virtual' | 'shadow';
   withoutRowid: boolean;
   strict: boolean;
   /** `_cf_*`, `sqlite_*`, `d1_*` and FTS shadow tables (UI-2). */
@@ -26,7 +26,7 @@ export interface ColumnInfo {
   pk: number;
   /** A virtual-table hidden column. */
   hidden: boolean;
-  generated: "virtual" | "stored" | null;
+  generated: 'virtual' | 'stored' | null;
 }
 
 export interface IndexInfo {
@@ -57,7 +57,7 @@ export interface ForeignKeyInfo {
 
 export interface TableSchema {
   name: string;
-  type: TableInfo["type"];
+  type: TableInfo['type'];
   withoutRowid: boolean;
   strict: boolean;
   /** Rows have a usable `rowid`. */
@@ -79,24 +79,24 @@ function objects(result: QueryResult | undefined): Row[] {
   );
 }
 
-const str = (v: Cell | undefined) => (typeof v === "string" ? v : v == null ? null : String(v));
-const num = (v: Cell | undefined) => (typeof v === "number" ? v : Number(str(v) ?? 0));
+const str = (v: Cell | undefined) => (typeof v === 'string' ? v : v == null ? null : String(v));
+const num = (v: Cell | undefined) => (typeof v === 'number' ? v : Number(str(v) ?? 0));
 
 export async function listTables(query: QueryFn): Promise<TableInfo[]> {
   let tables: TableInfo[];
   try {
-    const [result] = await query("PRAGMA table_list");
+    const [result] = await query('PRAGMA table_list');
     tables = objects(result)
-      .filter((r) => r.schema === "main")
+      .filter((r) => r.schema === 'main')
       .map((r) => {
         const name = String(r.name);
-        const type = String(r.type) as TableInfo["type"];
+        const type = String(r.type) as TableInfo['type'];
         return {
           name,
           type,
           withoutRowid: num(r.wr) === 1,
           strict: num(r.strict) === 1,
-          hidden: isHiddenTable(name) || type === "shadow",
+          hidden: isHiddenTable(name) || type === 'shadow',
         };
       });
   } catch {
@@ -106,9 +106,9 @@ export async function listTables(query: QueryFn): Promise<TableInfo[]> {
     );
     tables = objects(result).map((r) => {
       const name = String(r.name);
-      const sql = str(r.sql) ?? "";
+      const sql = str(r.sql) ?? '';
       const type =
-        r.type === "view" ? "view" : /^CREATE\s+VIRTUAL/i.test(sql) ? "virtual" : "table";
+        r.type === 'view' ? 'view' : /^CREATE\s+VIRTUAL/i.test(sql) ? 'virtual' : 'table';
       return {
         name,
         type,
@@ -131,7 +131,7 @@ export async function countRows(
   for (let i = 0; i < names.length; i += CHUNK) {
     const chunk = names.slice(i, i + CHUNK);
     try {
-      const select = chunk.map((n) => `(SELECT count(*) FROM ${quoteIdent(n)})`).join(", ");
+      const select = chunk.map((n) => `(SELECT count(*) FROM ${quoteIdent(n)})`).join(', ');
       const [result] = await query(`SELECT ${select}`);
       chunk.forEach((n, j) => {
         counts[n] = num(result?.rows[0]?.[j]);
@@ -159,7 +159,7 @@ export async function describe(query: QueryFn, table: TableInfo): Promise<TableS
       `PRAGMA index_list(${t})`,
       `PRAGMA foreign_key_list(${t})`,
       `SELECT type, name, sql FROM sqlite_schema WHERE tbl_name = ${quoteString(table.name)}`,
-    ].join(";\n"),
+    ].join(';\n'),
   );
 
   const columns: ColumnInfo[] = objects(xinfo).map((r) => {
@@ -167,12 +167,12 @@ export async function describe(query: QueryFn, table: TableInfo): Promise<TableS
     return {
       cid: num(r.cid),
       name: String(r.name),
-      type: str(r.type) ?? "",
+      type: str(r.type) ?? '',
       notNull: num(r.notnull) === 1,
       defaultValue: str(r.dflt_value),
       pk: num(r.pk),
       hidden: hidden === 1,
-      generated: hidden === 2 ? "virtual" : hidden === 3 ? "stored" : null,
+      generated: hidden === 2 ? 'virtual' : hidden === 3 ? 'stored' : null,
     };
   });
   const primaryKey = columns
@@ -187,7 +187,7 @@ export async function describe(query: QueryFn, table: TableInfo): Promise<TableS
   const indexRows = objects(indexList);
   const indexColumns = indexRows.length
     ? await query(
-        indexRows.map((r) => `PRAGMA index_xinfo(${quoteIdent(String(r.name))})`).join(";\n"),
+        indexRows.map((r) => `PRAGMA index_xinfo(${quoteIdent(String(r.name))})`).join(';\n'),
       )
     : [];
   const indexes: IndexInfo[] = indexRows
@@ -196,7 +196,7 @@ export async function describe(query: QueryFn, table: TableInfo): Promise<TableS
       const keys = objects(indexColumns[i])
         .filter((c) => num(c.key) === 1)
         .sort((a, b) => num(a.seqno) - num(b.seqno));
-      const sql = sqlOf("index", name);
+      const sql = sqlOf('index', name);
       const partial = num(r.partial) === 1;
       return {
         name,
@@ -238,25 +238,25 @@ export async function describe(query: QueryFn, table: TableInfo): Promise<TableS
     type: table.type,
     withoutRowid: table.withoutRowid,
     strict: table.strict,
-    rowid: !table.withoutRowid && table.type === "table",
+    rowid: !table.withoutRowid && table.type === 'table',
     columns,
     primaryKey,
     indexes,
     foreignKeys: [...fks.values()],
-    sql: sqlOf(table.type === "view" ? "view" : "table", table.name),
+    sql: sqlOf(table.type === 'view' ? 'view' : 'table', table.name),
   };
 }
 
 /** The expression after a `CREATE INDEX`'s top-level `WHERE`. */
 export function partialWhere(sql: string): string | null {
-  const where = tokenize(sql).find((t) => t.depth === 0 && isKeyword(t, "WHERE"));
-  return where ? sql.slice(where.end).trim().replace(/;$/, "").trim() || null : null;
+  const where = tokenize(sql).find((t) => t.depth === 0 && isKeyword(t, 'WHERE'));
+  return where ? sql.slice(where.end).trim().replace(/;$/, '').trim() || null : null;
 }
 
 /** A table or view with its column names and types, for editor autocomplete. */
 export interface SchemaTable {
   name: string;
-  type: TableInfo["type"];
+  type: TableInfo['type'];
   columns: { name: string; type: string }[];
 }
 
@@ -271,17 +271,17 @@ export async function allColumns(query: QueryFn, tables: TableInfo[]): Promise<S
   );
   try {
     const [result] = await query(
-      "SELECT m.name, p.name, p.type FROM sqlite_schema m JOIN pragma_table_info(m.name) p" +
+      'SELECT m.name, p.name, p.type FROM sqlite_schema m JOIN pragma_table_info(m.name) p' +
         " WHERE m.type IN ('table', 'view') ORDER BY m.name, p.cid",
     );
     for (const [table, name, type] of result?.rows ?? []) {
-      byName.get(String(table))?.columns.push({ name: String(name), type: str(type) ?? "" });
+      byName.get(String(table))?.columns.push({ name: String(name), type: str(type) ?? '' });
     }
   } catch {
     for (const t of byName.values()) {
       try {
         const [result] = await query(`PRAGMA table_info(${quoteIdent(t.name)})`);
-        t.columns = objects(result).map((r) => ({ name: String(r.name), type: str(r.type) ?? "" }));
+        t.columns = objects(result).map((r) => ({ name: String(r.name), type: str(r.type) ?? '' }));
       } catch {
         t.columns = [];
       }
@@ -292,10 +292,10 @@ export async function allColumns(query: QueryFn, tables: TableInfo[]): Promise<S
 
 /** A table or column name that isn't in the schema. */
 export class UnknownIdentifierError extends Error {
-  override name = "UnknownIdentifierError";
+  override name = 'UnknownIdentifierError';
   constructor(
     message: string,
-    readonly kind: "table" | "column",
+    readonly kind: 'table' | 'column',
   ) {
     super(message);
   }
@@ -333,7 +333,7 @@ export class SchemaCache {
 
   async assertTable(name: string): Promise<TableInfo> {
     const table = (await this.tables()).find((t) => t.name === name);
-    if (!table) throw new UnknownIdentifierError(`No such table: ${name}`, "table");
+    if (!table) throw new UnknownIdentifierError(`No such table: ${name}`, 'table');
     return table;
   }
 
@@ -353,7 +353,7 @@ export class SchemaCache {
     const known = new Set(schema.columns.map((c) => c.name));
     const missing = columns.find((c) => !known.has(c));
     if (missing !== undefined) {
-      throw new UnknownIdentifierError(`No such column: ${table}.${missing}`, "column");
+      throw new UnknownIdentifierError(`No such column: ${table}.${missing}`, 'column');
     }
     return schema;
   }

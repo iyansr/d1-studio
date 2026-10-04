@@ -1,12 +1,14 @@
-import { existsSync, readFileSync, statSync } from "node:fs";
-import path from "node:path";
-import { type ParseError, parse as parseJsonc, printParseErrorCode } from "jsonc-parser";
-import { UserError } from "../errors";
-import { displayPath } from "../paths";
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import path from 'node:path';
+
+import { type ParseError, parse as parseJsonc, printParseErrorCode } from 'jsonc-parser';
+
+import { UserError } from '../errors';
+import { displayPath } from '../paths';
 
 /** Wrangler's own order (D3). */
-export const CONFIG_NAMES = ["wrangler.json", "wrangler.jsonc", "wrangler.toml"] as const;
-export const DEPLOY_REDIRECT = path.join(".wrangler", "deploy", "config.json");
+export const CONFIG_NAMES = ['wrangler.json', 'wrangler.jsonc', 'wrangler.toml'] as const;
+export const DEPLOY_REDIRECT = path.join('.wrangler', 'deploy', 'config.json');
 
 export interface FoundConfig {
   /** The config to read bindings from (the redirect target when redirected). */
@@ -46,16 +48,16 @@ export function findConfig(cwd: string, explicit?: string): FoundConfig | undefi
     if (userConfigPath) return { path: userConfigPath, userConfigPath, redirected: false };
 
     const parent = path.dirname(dir);
-    if (existsSync(path.join(dir, ".git")) || parent === dir) return undefined;
+    if (existsSync(path.join(dir, '.git')) || parent === dir) return undefined;
     dir = parent;
   }
 }
 
 function readRedirect(file: string, cwd: string): string {
   const errors: ParseError[] = [];
-  const data = parseJsonc(readFileSync(file, "utf8"), errors, { allowTrailingComma: true });
+  const data = parseJsonc(readFileSync(file, 'utf8'), errors, { allowTrailingComma: true });
   const configPath = (data as { configPath?: unknown } | undefined)?.configPath;
-  if (errors.length > 0 || typeof configPath !== "string" || configPath === "") {
+  if (errors.length > 0 || typeof configPath !== 'string' || configPath === '') {
     const why = errors[0] ? printParseErrorCode(errors[0].error) : 'no "configPath"';
     throw new UserError(`Invalid deploy redirect ${displayPath(file, cwd)}: ${why}.`);
   }

@@ -1,12 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
-import { TableIcon, XIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { AppHeader } from "@/components/app-header";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SqlView } from "@/components/sql-view";
-import { StructureView } from "@/components/structure-view";
-import { TableData } from "@/components/table-data";
-import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
+import { useQuery } from '@tanstack/react-query';
+import { TableIcon, XIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { AppHeader } from '@/components/app-header';
+import { AppSidebar } from '@/components/app-sidebar';
+import { SqlView } from '@/components/sql-view';
+import { StructureView } from '@/components/structure-view';
+import { TableData } from '@/components/table-data';
+import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,21 +17,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { stagedFor, useStagedCount, useStagedTotal } from "@/edits/useStagedEdits";
-import { type Meta, queries } from "@/lib/api";
-import { readStored, writeStored } from "@/lib/storage";
-import { type Tab, useUrlState } from "@/lib/url-state";
+} from '@/components/ui/empty';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { stagedFor, useStagedCount, useStagedTotal } from '@/edits/useStagedEdits';
+import { type Meta, queries } from '@/lib/api';
+import { readStored, writeStored } from '@/lib/storage';
+import { type Tab, useUrlState } from '@/lib/url-state';
 
 export function Studio({ meta }: { meta: Meta }) {
   const [url, setUrl] = useUrlState();
@@ -38,14 +39,14 @@ export function Studio({ meta }: { meta: Meta }) {
 
   // Open the first table (or view), so there's data on screen right away.
   const visible = tables.data?.tables.filter((t) => !t.hidden) ?? [];
-  const first = (visible.find((t) => t.type !== "view") ?? visible[0])?.name;
+  const first = (visible.find((t) => t.type !== 'view') ?? visible[0])?.name;
   useEffect(() => {
     if (url.table === null && first) setUrl({ table: first }, { replace: true });
   }, [url.table, first, setUrl]);
 
   const table = url.table;
   const known = tables.data?.tables.find((t) => t.name === table);
-  const tab: Tab = table ? url.tab : "sql";
+  const tab: Tab = table ? url.tab : 'sql';
 
   // Staged edits (plan 04-T5): reloading or leaving the table asks first.
   const stagedHere = useStagedCount(table);
@@ -56,10 +57,10 @@ export function Studio({ meta }: { meta: Meta }) {
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       // Some browsers only ask when this is set.
-      event.returnValue = "";
+      event.returnValue = '';
     };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
   }, [stagedAnywhere]);
   const openTable = (name: string) => {
     if (name !== table && stagedHere > 0) setLeaving(name);
@@ -70,7 +71,7 @@ export function Studio({ meta }: { meta: Meta }) {
     <SidebarProvider className="h-svh">
       <AppSidebar
         tables={tables}
-        remote={meta.mode === "remote"}
+        remote={meta.mode === 'remote'}
         active={table}
         onOpen={openTable}
       />
@@ -115,7 +116,7 @@ export function Studio({ meta }: { meta: Meta }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Discard staged changes?</AlertDialogTitle>
             <AlertDialogDescription>
-              {table} has {stagedHere} staged {stagedHere === 1 ? "change" : "changes"} that haven't
+              {table} has {stagedHere} staged {stagedHere === 1 ? 'change' : 'changes'} that haven't
               been applied. Leaving the table discards them.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -155,8 +156,8 @@ function NoTable({ name }: { name: string }) {
 }
 
 /** Standing notices from the server (e.g. the `wrangler dev` write warning, 01-T10). */
-function Notices({ notices }: { notices: Meta["notices"] }) {
-  const [dismissed, setDismissed] = useState<string[]>(() => readStored("dismissed-notices", []));
+function Notices({ notices }: { notices: Meta['notices'] }) {
+  const [dismissed, setDismissed] = useState<string[]>(() => readStored('dismissed-notices', []));
   const visible = notices.filter((n) => !dismissed.includes(n.id));
   if (visible.length === 0) return null;
   return (
@@ -172,7 +173,7 @@ function Notices({ notices }: { notices: Meta["notices"] }) {
               onClick={() => {
                 const next = [...dismissed, notice.id];
                 setDismissed(next);
-                writeStored("dismissed-notices", next);
+                writeStored('dismissed-notices', next);
               }}
             >
               <XIcon />

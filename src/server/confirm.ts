@@ -1,12 +1,12 @@
-import type { Confirm, ConfirmLevel, PreviewStatement, WritePreview } from "../shared/edits";
-import { classify } from "../sql/classify";
-import { apiError } from "./errors";
+import type { Confirm, ConfirmLevel, PreviewStatement, WritePreview } from '../shared/edits';
+import { classify } from '../sql/classify';
+import { apiError } from './errors';
 
 /** Where a write comes from. The SQL editor's user wrote the SQL themselves. */
-export type WriteSource = "grid" | "editor";
+export type WriteSource = 'grid' | 'editor';
 
 export interface WriteRequest {
-  mode: "local" | "remote";
+  mode: 'local' | 'remote';
   readOnly: boolean;
   dangerous: boolean;
   source: WriteSource;
@@ -22,35 +22,35 @@ export interface WriteRequest {
  * the UI.
  */
 export function confirmationLevel(
-  req: Pick<WriteRequest, "mode" | "dangerous" | "source">,
+  req: Pick<WriteRequest, 'mode' | 'dangerous' | 'source'>,
 ): ConfirmLevel {
-  if (req.mode === "local") return "none";
-  if (req.dangerous) return "type-name";
-  return req.source === "grid" ? "click" : "none";
+  if (req.mode === 'local') return 'none';
+  if (req.dangerous) return 'type-name';
+  return req.source === 'grid' ? 'click' : 'none';
 }
 
 export type WriteDecision =
-  | { action: "run" }
+  | { action: 'run' }
   /** Read-only mode: 403. */
-  | { action: "refuse" }
+  | { action: 'refuse' }
   /** Nothing (or too little) was confirmed: 409, with the level needed. */
-  | { action: "confirm"; level: "click" | "type-name" }
+  | { action: 'confirm'; level: 'click' | 'type-name' }
   /** The typed name is wrong: 403. */
-  | { action: "mismatch" };
+  | { action: 'mismatch' };
 
 export function decideWrite(req: WriteRequest): WriteDecision {
-  if (req.readOnly) return { action: "refuse" };
+  if (req.readOnly) return { action: 'refuse' };
   const level = confirmationLevel(req);
-  if (level === "none") return { action: "run" };
-  if (req.confirm === undefined) return { action: "confirm", level };
-  if (level === "type-name" && req.confirm !== req.databaseName) return { action: "mismatch" };
-  return { action: "run" };
+  if (level === 'none') return { action: 'run' };
+  if (req.confirm === undefined) return { action: 'confirm', level };
+  if (level === 'type-name' && req.confirm !== req.databaseName) return { action: 'mismatch' };
+  return { action: 'run' };
 }
 
 /** The statements as they will run, each classified, and what confirming them takes. */
 export function writePreview(
-  statements: { sql: string; params?: PreviewStatement["params"] }[],
-  req: Pick<WriteRequest, "mode" | "source">,
+  statements: { sql: string; params?: PreviewStatement['params'] }[],
+  req: Pick<WriteRequest, 'mode' | 'source'>,
 ): WritePreview {
   const listed = statements.map((s) => ({
     sql: s.sql,
@@ -72,26 +72,26 @@ export function enforceWrite(
   databaseName: string,
 ): void {
   switch (decision.action) {
-    case "run":
+    case 'run':
       return;
-    case "refuse":
+    case 'refuse':
       throw apiError(
         403,
-        "Read-only mode: writes are not allowed. Restart with --write to enable edits.",
+        'Read-only mode: writes are not allowed. Restart with --write to enable edits.',
       );
-    case "confirm":
+    case 'confirm':
       throw apiError(
         409,
-        decision.level === "type-name"
+        decision.level === 'type-name'
           ? `This is destructive. Confirm by typing the database name (${databaseName}).`
-          : "This change needs confirmation before it runs.",
-        { code: "confirmation_required", preview },
+          : 'This change needs confirmation before it runs.',
+        { code: 'confirmation_required', preview },
       );
-    case "mismatch":
+    case 'mismatch':
       throw apiError(
         403,
         `Type the database name (${databaseName}) exactly to run destructive statements.`,
-        { code: "confirmation_mismatch", preview },
+        { code: 'confirmation_mismatch', preview },
       );
   }
 }
@@ -99,6 +99,6 @@ export function enforceWrite(
 /** The `confirm` field of a request body: `true`, or the database name typed. */
 export function parseConfirm(value: unknown): Confirm | undefined {
   if (value === undefined || value === true) return value;
-  if (typeof value === "string" && value !== "") return value;
+  if (typeof value === 'string' && value !== '') return value;
   throw apiError(400, '"confirm" must be true or the database name.');
 }

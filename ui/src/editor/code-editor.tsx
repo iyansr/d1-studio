@@ -1,10 +1,12 @@
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { json } from "@codemirror/lang-json";
-import { EditorState } from "@codemirror/state";
-import { drawSelection, EditorView, keymap, lineNumbers } from "@codemirror/view";
-import { type RefObject, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
-import { shadcnTheme } from "./theme";
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { json } from '@codemirror/lang-json';
+import { EditorState } from '@codemirror/state';
+import { drawSelection, EditorView, keymap, lineNumbers } from '@codemirror/view';
+import { type RefObject, useEffect, useRef } from 'react';
+
+import { cn } from '@/lib/utils';
+
+import { shadcnTheme } from './theme';
 
 export interface CodeEditorHandle {
   /** Replaces the whole document (Format). */
@@ -17,7 +19,7 @@ export interface CodeEditorHandle {
  */
 export function CodeEditor(props: {
   initialValue: string;
-  language: "json" | "text";
+  language: 'json' | 'text';
   label: string;
   onChange: (value: string) => void;
   handleRef?: RefObject<CodeEditorHandle | null>;
@@ -27,7 +29,7 @@ export function CodeEditor(props: {
   const latest = useRef(props);
   latest.current = props;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the editor is created once per mount.
+  /* oxlint-disable react-hooks/exhaustive-deps -- the editor is created once per mount. */
   useEffect(() => {
     if (!parent.current) return;
     const view = new EditorView({
@@ -40,8 +42,8 @@ export function CodeEditor(props: {
           drawSelection(),
           EditorView.lineWrapping,
           keymap.of([...defaultKeymap, ...historyKeymap]),
-          props.language === "json" ? json() : [],
-          EditorView.contentAttributes.of({ "aria-label": props.label }),
+          props.language === 'json' ? json() : [],
+          EditorView.contentAttributes.of({ 'aria-label': props.label }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) latest.current.onChange(update.state.doc.toString());
           }),
@@ -58,11 +60,12 @@ export function CodeEditor(props: {
     view.focus();
     return () => view.destroy();
   }, []);
+  /* oxlint-enable react-hooks/exhaustive-deps */
 
   return (
     <div
       ref={parent}
-      className={cn("min-h-0 overflow-hidden rounded-md border", props.className)}
+      className={cn('min-h-0 overflow-hidden rounded-md border', props.className)}
     />
   );
 }

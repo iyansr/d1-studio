@@ -1,18 +1,18 @@
-import { FILTER_OPS, type Filter, type FilterOp, UNARY_OPS } from "@shared/rows";
-import type { ParamValue } from "@shared/values";
-import { affinity } from "@/grid/cells";
+import { affinity } from '@/grid/cells';
+import { FILTER_OPS, type Filter, type FilterOp, UNARY_OPS } from '@shared/rows';
+import type { ParamValue } from '@shared/values';
 
 export const OP_LABELS: Record<FilterOp, string> = {
-  eq: "=",
-  ne: "≠",
-  lt: "<",
-  gt: ">",
-  le: "≤",
-  ge: "≥",
-  like: "LIKE",
-  nlike: "NOT LIKE",
-  null: "IS NULL",
-  nnull: "IS NOT NULL",
+  eq: '=',
+  ne: '≠',
+  lt: '<',
+  gt: '>',
+  le: '≤',
+  ge: '≥',
+  like: 'LIKE',
+  nlike: 'NOT LIKE',
+  null: 'IS NULL',
+  nnull: 'IS NOT NULL',
 };
 
 export const OP_ITEMS = FILTER_OPS.map((op) => ({ value: op, label: OP_LABELS[op] }));
@@ -32,13 +32,13 @@ export const draftOf = (f: Filter): Draft => ({
   op: f.op,
   value:
     f.value === undefined || f.value === null
-      ? ""
-      : typeof f.value === "object"
+      ? ''
+      : typeof f.value === 'object'
         ? f.value.$int
         : String(f.value),
 });
 
-export const numeric = (type: string) => ["integer", "real", "numeric"].includes(affinity(type));
+export const numeric = (type: string) => ['integer', 'real', 'numeric'].includes(affinity(type));
 
 /**
  * The value to send, or an error. Numeric-affinity columns take numbers;
@@ -47,8 +47,8 @@ export const numeric = (type: string) => ["integer", "real", "numeric"].includes
 export function parseValue(draft: Draft, type: string): { value?: ParamValue; error?: string } {
   if (UNARY_OPS.has(draft.op)) return {};
   const text = draft.value;
-  if (text.trim() === "") return { error: "Enter a value." };
-  if (!numeric(type) || draft.op === "like" || draft.op === "nlike") return { value: text };
+  if (text.trim() === '') return { error: 'Enter a value.' };
+  if (!numeric(type) || draft.op === 'like' || draft.op === 'nlike') return { value: text };
   const trimmed = text.trim();
   if (/^-?\d+$/.test(trimmed) && !Number.isSafeInteger(Number(trimmed))) {
     return { value: { $int: trimmed } };

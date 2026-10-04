@@ -1,6 +1,6 @@
-import { openSqlite, type SqliteConn } from "../local/sqlite";
-import { type Cell, decodeParam, encodeValue, type ParamValue } from "../shared/values";
-import { splitStatements } from "../sql/split";
+import { openSqlite, type SqliteConn } from '../local/sqlite';
+import { type Cell, decodeParam, encodeValue, type ParamValue } from '../shared/values';
+import { splitStatements } from '../sql/split';
 import {
   BatchError,
   ConflictError,
@@ -8,11 +8,11 @@ import {
   type Driver,
   type QueryResult,
   type Stmt,
-} from "./types";
+} from './types';
 
 /** A Miniflare (or any) SQLite file opened in-process. */
 export class LocalDriver implements Driver {
-  readonly mode = "local";
+  readonly mode = 'local';
 
   private constructor(
     private readonly conn: SqliteConn,
@@ -27,7 +27,7 @@ export class LocalDriver implements Driver {
   async query(sql: string, params: ParamValue[] = []): Promise<QueryResult[]> {
     const statements = splitStatements(sql);
     if (params.length > 0 && statements.length > 1) {
-      throw new DbError("Parameters can only be used with a single statement.");
+      throw new DbError('Parameters can only be used with a single statement.');
     }
     return statements.map((stmt, i) => {
       try {
@@ -40,13 +40,13 @@ export class LocalDriver implements Driver {
 
   async batch(stmts: Stmt[]): Promise<QueryResult[]> {
     const results: QueryResult[] = [];
-    this.conn.exec("BEGIN IMMEDIATE");
+    this.conn.exec('BEGIN IMMEDIATE');
     try {
       stmts.forEach((stmt, i) => {
         let result: QueryResult;
         try {
           if (splitStatements(stmt.sql).length !== 1) {
-            throw new Error("Each batch entry must be exactly one statement.");
+            throw new Error('Each batch entry must be exactly one statement.');
           }
           result = this.execute(stmt.sql, stmt.params ?? []);
         } catch (err) {
@@ -58,10 +58,10 @@ export class LocalDriver implements Driver {
         }
         results.push(result);
       });
-      this.conn.exec("COMMIT");
+      this.conn.exec('COMMIT');
     } catch (err) {
       try {
-        this.conn.exec("ROLLBACK");
+        this.conn.exec('ROLLBACK');
       } catch {
         // SQLite may already have rolled back (e.g. after SQLITE_FULL).
       }

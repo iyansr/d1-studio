@@ -1,5 +1,5 @@
 packages:
-  - "."
-  - "ui"
+  - '.'
+  - 'ui'
 allowBuilds:
   esbuild: true

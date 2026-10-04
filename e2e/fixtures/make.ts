@@ -1,15 +1,15 @@
 // Builds the Miniflare-style state for the e2e fixture projects. Runs from
 // Playwright's globalSetup, from `pnpm dev`, or by hand with
 // `node --experimental-strip-types e2e/fixtures/make.ts`. Node builtins only.
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
 const here = import.meta.dirname;
-const D1_DIR = path.join(".wrangler", "state", "v3", "d1", "miniflare-D1DatabaseObject");
+const D1_DIR = path.join('.wrangler', 'state', 'v3', 'd1', 'miniflare-D1DatabaseObject');
 /** `localD1FileName("3f2a9c1e-…")`, verified against Wrangler 4.142 (plans README). */
-const DB_FILE = "b42e24f17a18ea78782455811d8b104d1e7619471c8f59f3caf22389b6ce70f3.sqlite";
+const DB_FILE = 'b42e24f17a18ea78782455811d8b104d1e7619471c8f59f3caf22389b6ce70f3.sqlite';
 export const BIG_ROWS = 100_000;
 export const USER_ROWS = 240;
 
@@ -71,38 +71,38 @@ const APP_SQL = `
 
 function createDb(file: string, sql: string) {
   const db = new DatabaseSync(file);
-  db.exec("PRAGMA journal_mode = WAL");
+  db.exec('PRAGMA journal_mode = WAL');
   db.exec(sql);
   db.close();
 }
 
 function reset(project: string): string {
   const dir = path.join(here, project, D1_DIR);
-  rmSync(path.join(here, project, ".wrangler"), { recursive: true, force: true });
+  rmSync(path.join(here, project, '.wrangler'), { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   return dir;
 }
 
 export function makeE2eFixtures() {
-  const app = reset("project");
+  const app = reset('project');
   createDb(path.join(app, DB_FILE), APP_SQL);
-  createDb(path.join(app, "metadata.sqlite"), "CREATE TABLE _mf_entries (id TEXT PRIMARY KEY)");
+  createDb(path.join(app, 'metadata.sqlite'), 'CREATE TABLE _mf_entries (id TEXT PRIMARY KEY)');
 
   // Two files whose names match no binding: the studio shows the picker.
-  const unmatched = reset("unmatched");
+  const unmatched = reset('unmatched');
   createDb(
-    path.join(unmatched, `${"a".repeat(64)}.sqlite`),
+    path.join(unmatched, `${'a'.repeat(64)}.sqlite`),
     "CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT); INSERT INTO users (email) VALUES ('a@example.com'), ('b@example.com');" +
-      "CREATE TABLE sessions (id TEXT PRIMARY KEY, user_id INTEGER);",
+      'CREATE TABLE sessions (id TEXT PRIMARY KEY, user_id INTEGER);',
   );
   createDb(
-    path.join(unmatched, `${"b".repeat(64)}.sqlite`),
+    path.join(unmatched, `${'b'.repeat(64)}.sqlite`),
     "CREATE TABLE events (id INTEGER PRIMARY KEY, name TEXT); INSERT INTO events (name) VALUES ('signup'), ('login'), ('login');",
   );
 }
 
 export function e2eFixturesExist(): boolean {
-  return existsSync(path.join(here, "project", D1_DIR, DB_FILE));
+  return existsSync(path.join(here, 'project', D1_DIR, DB_FILE));
 }
 
 if (process.argv[1] === import.meta.filename) makeE2eFixtures();
@@ -152,18 +152,18 @@ export function makeEditDb(file: string) {
 
 /** A throwaway Wrangler project with the editing tables, for one spec. Returns its directory. */
 export function makeEditProject(): string {
-  const dir = mkdtempSync(path.join(tmpdir(), "d1s-e2e-edit-"));
+  const dir = mkdtempSync(path.join(tmpdir(), 'd1s-e2e-edit-'));
   writeFileSync(
-    path.join(dir, "wrangler.jsonc"),
+    path.join(dir, 'wrangler.jsonc'),
     JSON.stringify({
-      name: "e2e-edit",
-      main: "src/index.ts",
-      compatibility_date: "2026-09-01",
+      name: 'e2e-edit',
+      main: 'src/index.ts',
+      compatibility_date: '2026-09-01',
       d1_databases: [
         {
-          binding: "DB",
-          database_name: "app-db",
-          database_id: "3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90",
+          binding: 'DB',
+          database_name: 'app-db',
+          database_id: '3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90',
         },
       ],
     }),

@@ -1,4 +1,4 @@
-import type { Cell, ParamValue } from "../shared/values";
+import type { Cell, ParamValue } from '../shared/values';
 
 export interface Stmt {
   sql: string;
@@ -34,7 +34,7 @@ export interface Usage {
  * introspection is shared (see `introspect.ts`).
  */
 export interface Driver {
-  readonly mode: "local" | "remote";
+  readonly mode: 'local' | 'remote';
   readonly readOnly: boolean;
   /** Session totals; remote only, since D1 bills per row. */
   readonly usage?: Usage;
@@ -50,7 +50,7 @@ export interface Driver {
  * to the user verbatim (UI-8).
  */
 export class DbError extends Error {
-  override name = "DbError";
+  override name = 'DbError';
   constructor(
     message: string,
     readonly statementIndex?: number,
@@ -61,7 +61,7 @@ export class DbError extends Error {
 
 /** A batch statement failed; nothing was committed. */
 export class BatchError extends DbError {
-  override name = "BatchError";
+  override name = 'BatchError';
   constructor(
     readonly index: number,
     message: string,
@@ -75,7 +75,7 @@ export class BatchError extends DbError {
  * row was changed or deleted since it was loaded. The batch was rolled back.
  */
 export class ConflictError extends BatchError {
-  override name = "ConflictError";
+  override name = 'ConflictError';
   constructor(
     index: number,
     readonly expected: number,

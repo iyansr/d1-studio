@@ -1,6 +1,6 @@
-import { classify } from "./classify";
-import { splitStatements } from "./split";
-import { isKeyword } from "./tokenize";
+import { classify } from './classify';
+import { splitStatements } from './split';
+import { isKeyword } from './tokenize';
 
 /** Rows shown for an unbounded remote editor query (T6). */
 export const AUTO_LIMIT = 1000;
@@ -18,8 +18,8 @@ export function applyAutoLimit(sql: string): { sql: string; applied: boolean } {
   if (!stmt || statements.length !== 1) return unchanged;
 
   const { kind, keyword } = classify(stmt.tokens);
-  if (kind !== "read" || (keyword !== "SELECT" && keyword !== "VALUES")) return unchanged;
-  if (stmt.tokens.some((t) => t.depth === 0 && isKeyword(t, "LIMIT"))) return unchanged;
+  if (kind !== 'read' || (keyword !== 'SELECT' && keyword !== 'VALUES')) return unchanged;
+  if (stmt.tokens.some((t) => t.depth === 0 && isKeyword(t, 'LIMIT'))) return unchanged;
 
   // Drops the trailing `;` and any comment after the last token.
   const last = stmt.tokens[stmt.tokens.length - 1];

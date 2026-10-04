@@ -1,5 +1,6 @@
-import { HTTPException } from "hono/http-exception";
-import type { WritePreview } from "../shared/edits";
+import { HTTPException } from 'hono/http-exception';
+
+import type { WritePreview } from '../shared/edits';
 
 /** Error body shape for every API error. */
 export interface ApiErrorBody {
@@ -10,7 +11,7 @@ export interface ApiErrorBody {
      * `confirmation_required` (409, run again with `confirm`) and
      * `confirmation_mismatch` (403, the typed name was wrong).
      */
-    code?: "conflict" | "confirmation_required" | "confirmation_mismatch";
+    code?: 'conflict' | 'confirmation_required' | 'confirmation_mismatch';
     /** The failing statement of a batch, as sent to the driver. */
     statementIndex?: number;
     /** The failing op of a `/api/batch` request. */
@@ -25,7 +26,7 @@ export interface ApiErrorBody {
 export function apiError(
   status: 400 | 403 | 404 | 409,
   message: string,
-  extra: Omit<ApiErrorBody["error"], "message"> & { preview?: WritePreview } = {},
+  extra: Omit<ApiErrorBody['error'], 'message'> & { preview?: WritePreview } = {},
 ): HTTPException {
   const { preview, ...error } = extra;
   const body: ApiErrorBody = { error: { message, ...error } };
@@ -33,7 +34,7 @@ export function apiError(
   return new HTTPException(status, {
     res: new Response(JSON.stringify(body), {
       status,
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     }),
   });
 }

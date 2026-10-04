@@ -1,5 +1,5 @@
-import type { CellValue, EditOp, RowKey } from "@shared/edits";
-import type { Cell } from "@shared/values";
+import type { CellValue, EditOp, RowKey } from '@shared/edits';
+import type { Cell } from '@shared/values';
 
 /** A row of the page: a stable id (its key, not its position) and how the server finds it. */
 export interface RowRef {
@@ -8,7 +8,7 @@ export interface RowRef {
 }
 
 /** Inserted rows have no key yet; their id starts with this. */
-const INSERT_PREFIX = "n:";
+const INSERT_PREFIX = 'n:';
 
 export const isInsertId = (id: string): boolean => id.startsWith(INSERT_PREFIX);
 
@@ -51,11 +51,11 @@ export interface BuiltOps {
 
 export function sameValue(original: Cell, next: CellValue): boolean {
   if (original === null || next === null) return original === next;
-  if (typeof original === "object" || typeof next === "object") {
+  if (typeof original === 'object' || typeof next === 'object') {
     return (
-      typeof original === "object" &&
-      typeof next === "object" &&
-      "$int" in original &&
+      typeof original === 'object' &&
+      typeof next === 'object' &&
+      '$int' in original &&
       original.$int === next.$int
     );
   }
@@ -167,15 +167,15 @@ export class StagedEdits {
     const ops: EditOp[] = [];
     const ids: string[] = [];
     for (const [id, key] of this.snap.deletes) {
-      ops.push({ op: "delete", key });
+      ops.push({ op: 'delete', key });
       ids.push(id);
     }
     for (const [id, { key, set }] of this.snap.updates) {
-      ops.push({ op: "update", key, set: { ...set } });
+      ops.push({ op: 'update', key, set: { ...set } });
       ids.push(id);
     }
     for (const { tempId, values } of [...this.snap.inserts].reverse()) {
-      ops.push({ op: "insert", values: { ...values } });
+      ops.push({ op: 'insert', values: { ...values } });
       ids.push(tempId);
     }
     return { ops, ids };
@@ -192,7 +192,7 @@ export class StagedEdits {
     this.commit({ inserts: this.snap.inserts.filter((r) => !ids.includes(r.tempId)) });
   }
 
-  private commit(change: Partial<Omit<StagedSnapshot, "count">>): void {
+  private commit(change: Partial<Omit<StagedSnapshot, 'count'>>): void {
     const next = { ...this.snap, ...change };
     let count = next.inserts.length + next.deletes.size;
     for (const { set } of next.updates.values()) count += Object.keys(set).length;

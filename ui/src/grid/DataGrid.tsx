@@ -1,7 +1,4 @@
-import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
-import type { CellValue } from "@shared/edits";
-import type { Filter, Sort } from "@shared/rows";
-import type { Cell } from "@shared/values";
+import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 import {
   type ColumnSizingState,
   type ColumnVisibilityState,
@@ -13,8 +10,8 @@ import {
   type SortingState,
   tableFeatures,
   useTable,
-} from "@tanstack/react-table";
-import { useVirtualizer } from "@tanstack/react-virtual";
+} from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -28,7 +25,7 @@ import {
   PencilIcon,
   Trash2Icon,
   Undo2Icon,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   type KeyboardEvent,
   type ReactNode,
@@ -38,11 +35,12 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+} from 'react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -50,7 +48,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+} from '@/components/ui/context-menu';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,8 +56,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
+} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -67,15 +65,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { RowRef, StagedEdits, StagedSnapshot } from "@/edits/staged-edits";
-import { editText, inputKind } from "@/edits/values";
-import { readStored, writeStored } from "@/lib/storage";
-import { cn } from "@/lib/utils";
-import { type CancelReason, CellEditor, type CommitKey } from "./cell-editor";
-import { CellSheet, type ExpandedCell } from "./cell-sheet";
-import { affinity, blobLabel, cellKind, cellText, isExpandable, TOOLTIP_CHARS } from "./cells";
+} from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { RowRef, StagedEdits, StagedSnapshot } from '@/edits/staged-edits';
+import { editText, inputKind } from '@/edits/values';
+import { readStored, writeStored } from '@/lib/storage';
+import { cn } from '@/lib/utils';
+import type { CellValue } from '@shared/edits';
+import type { Filter, Sort } from '@shared/rows';
+import type { Cell } from '@shared/values';
+
+import { type CancelReason, CellEditor, type CommitKey } from './cell-editor';
+import { CellSheet, type ExpandedCell } from './cell-sheet';
+import { affinity, blobLabel, cellKind, cellText, isExpandable, TOOLTIP_CHARS } from './cells';
 
 export interface GridColumn {
   name: string;
@@ -140,15 +142,15 @@ interface Meta {
 
 /** One row on screen: a staged insert (pinned first) or a row of the page. */
 type DisplayRow =
-  | { kind: "insert"; id: string; values: Readonly<Record<string, CellValue>> }
-  | { kind: "data"; index: number; row: Cell[]; ref: RowRef | undefined };
+  | { kind: 'insert'; id: string; values: Readonly<Record<string, CellValue>> }
+  | { kind: 'data'; index: number; row: Cell[]; ref: RowRef | undefined };
 
-const SELECT_ID = "__select";
+const SELECT_ID = '__select';
 const SELECT_WIDTH = 44;
-const SELECT_COLUMN: GridColumn = { name: SELECT_ID, type: "" };
+const SELECT_COLUMN: GridColumn = { name: SELECT_ID, type: '' };
 
 /** Row styling that says what is staged (semantic tokens from index.css). */
-type RowState = "inserted" | "deleted" | "failed";
+type RowState = 'inserted' | 'deleted' | 'failed';
 
 const features = tableFeatures({
   rowSortingFeature,
@@ -196,14 +198,14 @@ export function DataGrid(props: DataGridProps) {
   // Staged inserts sit above the page, newest first.
   const display = useMemo<DisplayRow[]>(() => {
     const data = rows.map<DisplayRow>((row, index) => ({
-      kind: "data",
+      kind: 'data',
       index,
       row,
       ref: editing?.identify(row),
     }));
     if (!editing) return data;
     const inserts = editing.staged.inserts.map<DisplayRow>((r) => ({
-      kind: "insert",
+      kind: 'insert',
       id: r.tempId,
       values: r.values,
     }));
@@ -231,7 +233,7 @@ export function DataGrid(props: DataGridProps) {
     if (!editable) return data;
     const select = helper.accessor((): unknown => null, {
       id: SELECT_ID,
-      header: "",
+      header: '',
       size: SELECT_WIDTH,
       enableSorting: false,
       enableResizing: false,
@@ -248,7 +250,7 @@ export function DataGrid(props: DataGridProps) {
   }, [widthsKey, sizing]);
 
   const sorting = useMemo<SortingState>(
-    () => (sort ?? []).map((s) => ({ id: s.col, desc: s.dir === "desc" })),
+    () => (sort ?? []).map((s) => ({ id: s.col, desc: s.dir === 'desc' })),
     [sort],
   );
   const visibility = useMemo<ColumnVisibilityState>(
@@ -262,7 +264,7 @@ export function DataGrid(props: DataGridProps) {
     data: rows,
     getRowId: (_row, index) => String(index),
     defaultColumn: { minSize: 60, maxSize: 1200 },
-    columnResizeMode: "onChange",
+    columnResizeMode: 'onChange',
     manualSorting: true,
     enableMultiSort: true,
     enableMultiRemove: true,
@@ -270,11 +272,11 @@ export function DataGrid(props: DataGridProps) {
     sortDescFirst: false,
     state: { sorting, columnSizing: sizing, columnVisibility: visibility },
     onSortingChange: (updater) => {
-      const next = typeof updater === "function" ? updater(sorting) : updater;
-      onSortChange?.(next.map((s) => ({ col: s.id, dir: s.desc ? "desc" : "asc" })));
+      const next = typeof updater === 'function' ? updater(sorting) : updater;
+      onSortChange?.(next.map((s) => ({ col: s.id, dir: s.desc ? 'desc' : 'asc' })));
     },
     onColumnSizingChange: (updater) =>
-      setSizing((prev) => (typeof updater === "function" ? updater(prev) : updater)),
+      setSizing((prev) => (typeof updater === 'function' ? updater(prev) : updater)),
   });
 
   const headers = table.getHeaderGroups()[0]?.headers ?? [];
@@ -299,8 +301,8 @@ export function DataGrid(props: DataGridProps) {
     overscan: 4,
     enabled: virtualColumns,
   });
-  const sizeKey = headers.map((h) => h.getSize()).join(",");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when widths change.
+  const sizeKey = headers.map((h) => h.getSize()).join(',');
+  // Re-measure when widths change.
   useEffect(() => {
     if (virtualColumns) colVirtualizer.measure();
   }, [sizeKey, virtualColumns, colVirtualizer]);
@@ -320,7 +322,7 @@ export function DataGrid(props: DataGridProps) {
   // T11 perf: request start is marked in api.rows; this marks first paint.
   useEffect(() => {
     if (rows.length === 0) return;
-    const frame = requestAnimationFrame(() => performance.mark("d1s:grid-painted"));
+    const frame = requestAnimationFrame(() => performance.mark('d1s:grid-painted'));
     return () => cancelAnimationFrame(frame);
   }, [rows]);
 
@@ -337,9 +339,9 @@ export function DataGrid(props: DataGridProps) {
       const col = Math.min(Math.max(next.col, 0), cols - 1);
       focusPending.current = true;
       setActive({ row, col });
-      if (row >= 0) rowVirtualizer.scrollToIndex(row, { align: "auto" });
+      if (row >= 0) rowVirtualizer.scrollToIndex(row, { align: 'auto' });
       else scrollRef.current?.scrollTo({ top: 0 });
-      if (virtualColumns) colVirtualizer.scrollToIndex(col, { align: "auto" });
+      if (virtualColumns) colVirtualizer.scrollToIndex(col, { align: 'auto' });
     },
     [display.length, cols, rowVirtualizer, colVirtualizer, virtualColumns],
   );
@@ -356,11 +358,12 @@ export function DataGrid(props: DataGridProps) {
 
   // "Add row": the new row is pinned at the top, so bring it into view and focus it.
   const seenInserts = useRef(insertCount);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: only a new insert should move focus.
+  /* oxlint-disable react-hooks/exhaustive-deps -- only a new insert should move focus. */
   useEffect(() => {
     if (insertCount > seenInserts.current) move({ row: 0, col: editable ? 1 : 0 });
     seenInserts.current = insertCount;
   }, [insertCount]);
+  /* oxlint-enable react-hooks/exhaustive-deps */
 
   const [expanded, setExpanded] = useState<ExpandedCell | null>(null);
   const [menuCell, setMenuCell] = useState<Active | null>(null);
@@ -374,13 +377,13 @@ export function DataGrid(props: DataGridProps) {
   const columnAt = (at: Active) => metaAt(at)?.col;
 
   const isDeleted = (dr: DisplayRow | undefined): boolean =>
-    dr?.kind === "data" && dr.ref !== undefined && staged?.deletes.has(dr.ref.id) === true;
+    dr?.kind === 'data' && dr.ref !== undefined && staged?.deletes.has(dr.ref.id) === true;
   const rowIdOf = (dr: DisplayRow | undefined): string | undefined =>
-    dr?.kind === "insert" ? dr.id : dr?.ref?.id;
+    dr?.kind === 'insert' ? dr.id : dr?.ref?.id;
 
   /** A cell's shown value: staged over stored. `undefined` is an unset insert (DEFAULT). */
   const stateOf = (dr: DisplayRow, meta: Meta): { value: Cell | undefined; staged: boolean } => {
-    if (dr.kind === "insert") {
+    if (dr.kind === 'insert') {
       const value = dr.values[meta.col.name];
       return { value, staged: value !== undefined };
     }
@@ -404,9 +407,9 @@ export function DataGrid(props: DataGridProps) {
     const dr = display[at.row];
     if (!editing || !meta || meta.select || !dr || at.row < 0) return false;
     if (editing.readonlyColumns.has(meta.col.name)) return false;
-    if (dr.kind === "insert") return !meta.col.type.toUpperCase().includes("BLOB");
+    if (dr.kind === 'insert') return !meta.col.type.toUpperCase().includes('BLOB');
     if (!dr.ref || isDeleted(dr)) return false;
-    return cellKind(stateOf(dr, meta).value ?? null) !== "blob";
+    return cellKind(stateOf(dr, meta).value ?? null) !== 'blob';
   };
 
   /** Stages `value` on a cell, routing to the insert or the existing row. */
@@ -414,7 +417,7 @@ export function DataGrid(props: DataGridProps) {
     const meta = metaAt(at);
     const dr = display[at.row];
     if (!editing || !meta || !dr) return;
-    if (dr.kind === "insert") editing.store.setInsertCell(dr.id, meta.col.name, value);
+    if (dr.kind === 'insert') editing.store.setInsertCell(dr.id, meta.col.name, value);
     else if (dr.ref) {
       editing.store.setCell(dr.ref, meta.col.name, value, dr.row[meta.index] ?? null);
     }
@@ -423,13 +426,13 @@ export function DataGrid(props: DataGridProps) {
     const meta = metaAt(at);
     const dr = display[at.row];
     if (!editing || !meta || !dr) return;
-    if (dr.kind === "insert") editing.store.setInsertCell(dr.id, meta.col.name, undefined);
+    if (dr.kind === 'insert') editing.store.setInsertCell(dr.id, meta.col.name, undefined);
     else if (dr.ref) editing.store.revertCell(dr.ref.id, meta.col.name);
   };
   const deleteRowAt = (at: Active) => {
     const dr = display[at.row];
     if (!editing || !dr) return;
-    if (dr.kind === "insert") editing.store.deleteRows([{ id: dr.id }]);
+    if (dr.kind === 'insert') editing.store.deleteRows([{ id: dr.id }]);
     else if (dr.ref) editing.store.deleteRows([dr.ref]);
   };
 
@@ -441,7 +444,7 @@ export function DataGrid(props: DataGridProps) {
     setExpanded({
       column: meta.col.name,
       type: meta.col.type,
-      row: dr.kind === "insert" ? "new" : (props.rowOffset ?? 0) + dr.index + 1,
+      row: dr.kind === 'insert' ? 'new' : (props.rowOffset ?? 0) + dr.index + 1,
       value,
       at,
       editable: canEdit(at),
@@ -461,8 +464,8 @@ export function DataGrid(props: DataGridProps) {
   const finishEdit = (at: Active, how: CommitKey | CancelReason) => {
     setEditCell(null);
     // Leaving by clicking elsewhere must not pull focus back.
-    if (how === "blur") return;
-    if (how === "tab") move({ row: at.row, col: at.col + 1 });
+    if (how === 'blur') return;
+    if (how === 'tab') move({ row: at.row, col: at.col + 1 });
     else {
       focusPending.current = true;
       setActive(at);
@@ -472,7 +475,7 @@ export function DataGrid(props: DataGridProps) {
   const copy = async (value: Cell) => {
     try {
       await navigator.clipboard.writeText(cellText(value));
-      toast.success("Copied");
+      toast.success('Copied');
     } catch {
       toast.error("Couldn't copy to the clipboard");
     }
@@ -490,7 +493,9 @@ export function DataGrid(props: DataGridProps) {
     const to = shift && anchor.current !== null ? Math.max(anchor.current, index) : index;
     for (let i = from; i <= to; i++) {
       const rid = selectableId(display[i]);
-      if (rid) on ? next.add(rid) : next.delete(rid);
+      if (!rid) continue;
+      if (on) next.add(rid);
+      else next.delete(rid);
     }
     anchor.current = index;
     editing.onSelectedChange(next);
@@ -504,8 +509,8 @@ export function DataGrid(props: DataGridProps) {
   const onKeyDown = (event: KeyboardEvent<HTMLTableElement>) => {
     const target = event.target as HTMLElement;
     // Keys typed into the cell editor belong to it, not to the grid.
-    if (target.closest("[data-editor]")) return;
-    const cell = target.closest<HTMLElement>("[data-cell]");
+    if (target.closest('[data-editor]')) return;
+    const cell = target.closest<HTMLElement>('[data-cell]');
     if (!cell || !tableRef.current?.contains(cell)) return;
     const at = clamped;
     const onSelect = metaAt(at)?.select === true;
@@ -516,13 +521,13 @@ export function DataGrid(props: DataGridProps) {
     );
     let next: Active | undefined;
     switch (event.key) {
-      case "ArrowRight":
+      case 'ArrowRight':
         next = { ...at, col: at.col + 1 };
         break;
-      case "ArrowLeft":
+      case 'ArrowLeft':
         next = { ...at, col: at.col - 1 };
         break;
-      case "ArrowDown":
+      case 'ArrowDown':
         if (event.altKey && at.row === -1) {
           setOpenMenu(headers[at.col]?.id ?? null);
           event.preventDefault();
@@ -530,43 +535,43 @@ export function DataGrid(props: DataGridProps) {
         }
         next = { ...at, row: at.row + 1 };
         break;
-      case "ArrowUp":
+      case 'ArrowUp':
         next = { ...at, row: at.row - 1 };
         break;
-      case "Home":
+      case 'Home':
         next = ctrl ? { row: display.length > 0 ? 0 : -1, col: 0 } : { ...at, col: 0 };
         break;
-      case "End":
+      case 'End':
         next = ctrl ? { row: display.length - 1, col: cols - 1 } : { ...at, col: cols - 1 };
         break;
-      case "PageDown":
+      case 'PageDown':
         next = { ...at, row: at.row + page };
         break;
-      case "PageUp":
+      case 'PageUp':
         next = { ...at, row: Math.max(at.row - page, at.row < 0 ? -1 : 0) };
         break;
-      case "Enter":
+      case 'Enter':
         if (at.row >= 0 && !onSelect) {
           event.preventDefault();
           if (editing) startEdit(at);
           else expand(at);
         }
         return;
-      case "F2":
+      case 'F2':
         if (editing && at.row >= 0 && !onSelect) {
           event.preventDefault();
           startEdit(at);
         }
         return;
-      case " ":
+      case ' ':
         if (editing && onSelect) {
           event.preventDefault();
           if (at.row >= 0) toggleRow(at.row, event.shiftKey);
           else toggleAll();
         }
         return;
-      case "c":
-      case "C": {
+      case 'c':
+      case 'C': {
         if (!ctrl || at.row < 0 || window.getSelection()?.toString()) return;
         const value = valueAt(at);
         if (value !== undefined) {
@@ -615,14 +620,14 @@ export function DataGrid(props: DataGridProps) {
         // The row a failed apply pointed at stands out over its other state.
         const rowState: RowState | undefined =
           rowId !== undefined && staged?.failed === rowId
-            ? "failed"
-            : dr.kind === "insert"
-              ? "inserted"
+            ? 'failed'
+            : dr.kind === 'insert'
+              ? 'inserted'
               : isDeleted(dr)
-                ? "deleted"
+                ? 'deleted'
                 : undefined;
         const rowIndex =
-          dr.kind === "insert" ? vr.index + 2 : (props.rowOffset ?? 0) + insertCount + dr.index + 2;
+          dr.kind === 'insert' ? vr.index + 2 : (props.rowOffset ?? 0) + insertCount + dr.index + 2;
         return (
           <TableRow
             key={vr.key}
@@ -649,8 +654,8 @@ export function DataGrid(props: DataGridProps) {
                     tabbable={isActive}
                     width={header.getSize()}
                     label={
-                      dr.kind === "insert"
-                        ? "Select new row"
+                      dr.kind === 'insert'
+                        ? 'Select new row'
                         : `Select row ${(props.rowOffset ?? 0) + dr.index + 1}`
                     }
                     checked={rowId !== undefined && editing?.selected.has(rowId) === true}
@@ -711,7 +716,7 @@ export function DataGrid(props: DataGridProps) {
     <div
       ref={scrollRef}
       className={cn(
-        "relative min-h-0 flex-1 overflow-auto [&>[data-slot=table-container]]:overflow-visible",
+        'relative min-h-0 flex-1 overflow-auto [&>[data-slot=table-container]]:overflow-visible',
         props.className,
       )}
     >
@@ -722,7 +727,7 @@ export function DataGrid(props: DataGridProps) {
         aria-rowcount={(props.rowCount ?? rows.length) + insertCount + 1}
         aria-colcount={cols}
         onKeyDown={onKeyDown}
-        style={{ width: table.getTotalSize(), tableLayout: "fixed" }}
+        style={{ width: table.getTotalSize(), tableLayout: 'fixed' }}
         className="border-separate border-spacing-0 font-mono text-[13px]"
       >
         <TableHeader className="sticky top-0 z-10 bg-background [&_tr]:border-0">
@@ -743,9 +748,9 @@ export function DataGrid(props: DataGridProps) {
                     style={{ width: header.getSize(), height: HEADER_HEIGHT }}
                     className="sticky left-0 z-20 border-r border-b bg-background p-0"
                   >
-                    {/* biome-ignore lint/a11y/noStaticElementInteractions: the grid's roving-focus target, like the other header cells. */}
                     <div
                       data-cell={`-1:${vc.index}`}
+                      // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the grid's roving-focus target, like the other header cells.
                       tabIndex={clamped.row === -1 && clamped.col === vc.index ? 0 : -1}
                       onFocus={() => setActive({ row: -1, col: vc.index })}
                       className="flex h-full items-center justify-center bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
@@ -770,11 +775,11 @@ export function DataGrid(props: DataGridProps) {
                   aria-colindex={vc.index + 1}
                   aria-sort={
                     sortable
-                      ? sorted === "asc"
-                        ? "ascending"
-                        : sorted === "desc"
-                          ? "descending"
-                          : "none"
+                      ? sorted === 'asc'
+                        ? 'ascending'
+                        : sorted === 'desc'
+                          ? 'descending'
+                          : 'none'
                       : undefined
                   }
                   style={{ width: header.getSize(), height: HEADER_HEIGHT }}
@@ -788,7 +793,7 @@ export function DataGrid(props: DataGridProps) {
                       onFocus={() => setActive({ row: -1, col: vc.index })}
                       onClick={sortable ? header.column.getToggleSortingHandler() : undefined}
                       aria-disabled={!sortable || undefined}
-                      title={sortable ? "Sort (Shift-click adds a sort)" : undefined}
+                      title={sortable ? 'Sort (Shift-click adds a sort)' : undefined}
                       className="flex h-full min-w-0 flex-1 items-center gap-1.5 px-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                     >
                       {meta.col.pk ? (
@@ -806,7 +811,7 @@ export function DataGrid(props: DataGridProps) {
                       )}
                       {sorted && (
                         <span className="ml-auto flex shrink-0 items-center text-xs text-muted-foreground">
-                          {sorted === "asc" ? (
+                          {sorted === 'asc' ? (
                             <ArrowUpIcon aria-label="ascending" className="size-3.5" />
                           ) : (
                             <ArrowDownIcon aria-label="descending" className="size-3.5" />
@@ -936,18 +941,18 @@ export function DataGrid(props: DataGridProps) {
                     disabled={
                       menuValue === undefined ||
                       menuValue === null ||
-                      cellKind(menuValue) === "blob"
+                      cellKind(menuValue) === 'blob'
                     }
                     onClick={() => {
                       if (
                         menuValue === undefined ||
                         menuValue === null ||
-                        cellKind(menuValue) === "blob"
+                        cellKind(menuValue) === 'blob'
                       )
                         return;
                       props.onAddFilter?.({
                         col: menuColumn.name,
-                        op: "eq",
+                        op: 'eq',
                         value: menuValue as Exclude<Cell, null | { $blob: number }>,
                       });
                     }}
@@ -956,7 +961,7 @@ export function DataGrid(props: DataGridProps) {
                     Filter by this value
                   </ContextMenuItem>
                   <ContextMenuItem
-                    onClick={() => props.onAddFilter?.({ col: menuColumn.name, op: "null" })}
+                    onClick={() => props.onAddFilter?.({ col: menuColumn.name, op: 'null' })}
                   >
                     <FilterIcon />
                     Is NULL
@@ -999,14 +1004,14 @@ export function DataGrid(props: DataGridProps) {
 
 /** Edge and tint per staged row state (semantic tokens, 02-T1). */
 const ROW_STATE_CELL: Record<RowState, string> = {
-  inserted: "bg-inserted/10",
-  deleted: "text-muted-foreground line-through",
-  failed: "bg-destructive/10",
+  inserted: 'bg-inserted/10',
+  deleted: 'text-muted-foreground line-through',
+  failed: 'bg-destructive/10',
 };
 const ROW_STATE_EDGE: Record<RowState, string> = {
-  inserted: "border-l-2 border-l-inserted",
-  deleted: "border-l-2 border-l-deleted",
-  failed: "border-l-2 border-l-destructive",
+  inserted: 'border-l-2 border-l-inserted',
+  deleted: 'border-l-2 border-l-deleted',
+  failed: 'border-l-2 border-l-destructive',
 };
 
 function GridCell(props: {
@@ -1028,21 +1033,21 @@ function GridCell(props: {
   const { value } = props;
   const kind = cellKind(value);
   const cellProps = {
-    role: "gridcell",
-    "data-cell": props.cellId,
-    "data-staged": props.staged || undefined,
-    "aria-description": props.staged ? "edited" : undefined,
-    "aria-colindex": props.colIndex,
+    role: 'gridcell',
+    'data-cell': props.cellId,
+    'data-staged': props.staged || undefined,
+    'aria-description': props.staged ? 'edited' : undefined,
+    'aria-colindex': props.colIndex,
     tabIndex: props.tabbable ? 0 : -1,
     onFocus: props.onFocus,
     onDoubleClick: props.onDoubleClick,
     onContextMenu: props.onContextMenu,
     className: cn(
-      "relative h-8 max-w-0 truncate border-r border-b px-2 py-0 outline-none focus:outline-2 focus:-outline-offset-2 focus:outline-ring",
-      (kind === "number" || kind === "int") && "text-right tabular-nums",
+      'relative h-8 max-w-0 truncate border-r border-b px-2 py-0 outline-none focus:outline-2 focus:-outline-offset-2 focus:outline-ring',
+      (kind === 'number' || kind === 'int') && 'text-right tabular-nums',
       props.state && ROW_STATE_CELL[props.state],
-      props.staged && "bg-staged/15",
-      props.editor && "overflow-visible p-0",
+      props.staged && 'bg-staged/15',
+      props.editor && 'overflow-visible p-0',
     ),
   } as const;
   const dot = props.staged && !props.editor && (
@@ -1057,7 +1062,7 @@ function GridCell(props: {
       </TableCell>
     );
   }
-  if (kind === "null") {
+  if (kind === 'null') {
     return (
       <TableCell {...cellProps}>
         <span className="text-muted-foreground italic">NULL</span>
@@ -1065,7 +1070,7 @@ function GridCell(props: {
       </TableCell>
     );
   }
-  if (kind === "number" || kind === "int") {
+  if (kind === 'number' || kind === 'int') {
     return (
       <TableCell {...cellProps}>
         {cellText(value)}
@@ -1073,7 +1078,7 @@ function GridCell(props: {
       </TableCell>
     );
   }
-  if (kind === "blob") {
+  if (kind === 'blob') {
     return (
       <TableCell {...cellProps}>
         <Badge variant="secondary">{blobLabel((value as { $blob: number }).$blob)}</Badge>
@@ -1082,16 +1087,16 @@ function GridCell(props: {
   }
   const text = value as string;
   const content =
-    kind === "json" ? (
+    kind === 'json' ? (
       <span className="flex min-w-0 items-center gap-1.5">
-        <Badge variant="outline">{text.trimStart().startsWith("[") ? "[]" : "{}"}</Badge>
+        <Badge variant="outline">{text.trimStart().startsWith('[') ? '[]' : '{}'}</Badge>
         <span className="truncate">{text}</span>
       </span>
     ) : (
       text
     );
   // Only likely-truncated text gets a tooltip; they share one popup.
-  const truncated = text.length * 7.9 > props.width - 16 || text.includes("\n");
+  const truncated = text.length * 7.9 > props.width - 16 || text.includes('\n');
   if (!truncated) {
     return (
       <TableCell {...cellProps}>
@@ -1134,7 +1139,7 @@ function SelectCell(props: {
       tabIndex={props.tabbable ? 0 : -1}
       onFocus={props.onFocus}
       className={cn(
-        "sticky left-0 z-[1] h-8 border-r border-b bg-background p-0 outline-none focus:outline-2 focus:-outline-offset-2 focus:outline-ring",
+        'sticky left-0 z-[1] h-8 border-r border-b bg-background p-0 outline-none focus:outline-2 focus:-outline-offset-2 focus:outline-ring',
         props.state && ROW_STATE_EDGE[props.state],
       )}
     >
@@ -1157,8 +1162,8 @@ function SelectCell(props: {
   );
 }
 
-function ForeignKeyIcon({ fk }: { fk: NonNullable<GridColumn["fk"]> }) {
-  const target = `${fk.table}.${fk.column ?? "?"}`;
+function ForeignKeyIcon({ fk }: { fk: NonNullable<GridColumn['fk']> }) {
+  const target = `${fk.table}.${fk.column ?? '?'}`;
   return (
     <Tooltip>
       <TooltipTrigger
@@ -1175,10 +1180,10 @@ function ForeignKeyIcon({ fk }: { fk: NonNullable<GridColumn["fk"]> }) {
 
 function SkeletonRows({ cols }: { cols: number }) {
   return Array.from({ length: 8 }, (_, r) => (
-    // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders.
+    // Static placeholders.
     <TableRow key={r} className="hover:bg-transparent">
       {Array.from({ length: cols }, (_, c) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders.
+        // Static placeholders.
         <TableCell key={c} className="h-8 border-b px-2 py-0">
           <Skeleton className="h-4 w-3/4" />
         </TableCell>

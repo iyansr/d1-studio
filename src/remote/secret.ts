@@ -1,6 +1,6 @@
-import { inspect } from "node:util";
+import { inspect } from 'node:util';
 
-const REDACTED = "[redacted]";
+const REDACTED = '[redacted]';
 
 /**
  * A credential that prints as `[redacted]` in logs, JSON, string templates

@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 /** A canned API response: `{ status, headers?, body }` (test/fixtures/d1-api/). */
 export interface Canned {
@@ -9,14 +9,14 @@ export interface Canned {
 }
 
 export function fixture(name: string): Canned {
-  const file = path.resolve(import.meta.dirname, "../fixtures/d1-api", `${name}.json`);
-  return JSON.parse(readFileSync(file, "utf8")) as Canned;
+  const file = path.resolve(import.meta.dirname, '../fixtures/d1-api', `${name}.json`);
+  return JSON.parse(readFileSync(file, 'utf8')) as Canned;
 }
 
 export function respond(canned: Canned): Response {
   return new Response(JSON.stringify(canned.body), {
     status: canned.status,
-    headers: { "Content-Type": "application/json", ...canned.headers },
+    headers: { 'Content-Type': 'application/json', ...canned.headers },
   });
 }
 
@@ -40,10 +40,10 @@ export function stubFetch(
   const requests: Recorded[] = [];
   const fn = (async (input: string | URL | Request, init?: RequestInit) => {
     const req: Recorded = {
-      method: init?.method ?? "GET",
+      method: init?.method ?? 'GET',
       url: new URL(String(input)),
       headers: new Headers(init?.headers),
-      body: typeof init?.body === "string" ? JSON.parse(init.body) : undefined,
+      body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined,
     };
     requests.push(req);
     const out = await handler(req, requests.length - 1);

@@ -1,6 +1,6 @@
 /** A standing notice the UI shows as an alert. */
 export interface Notice {
-  id: "wrangler-dev-writes";
+  id: 'wrangler-dev-writes';
   message: string;
 }
 
@@ -10,14 +10,14 @@ export interface Notice {
  * do this, so the notice is for local write mode only.
  */
 export const WRANGLER_DEV_WRITES: Notice = {
-  id: "wrangler-dev-writes",
+  id: 'wrangler-dev-writes',
   message:
-    "If `wrangler dev` is running, a Worker write that overlaps a studio write fails with SQLITE_BUSY. Reads are safe, and nothing is corrupted.",
+    'If `wrangler dev` is running, a Worker write that overlaps a studio write fails with SQLITE_BUSY. Reads are safe, and nothing is corrupted.',
 };
 
 /** Attached to a query response when the server changed the query (T6). */
 export interface QueryNotice {
-  kind: "auto-limit";
+  kind: 'auto-limit';
   /** Rows returned; the query had more. */
   limit: number;
 }

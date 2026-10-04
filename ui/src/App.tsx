@@ -1,17 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
-import { KeyRoundIcon, ServerOffIcon } from "lucide-react";
-import { useEffect, useSyncExternalStore } from "react";
-import { DbPicker } from "@/components/db-picker";
-import { Studio } from "@/components/studio";
+import { useQuery } from '@tanstack/react-query';
+import { KeyRoundIcon, ServerOffIcon } from 'lucide-react';
+import { useEffect, useSyncExternalStore } from 'react';
+
+import { DbPicker } from '@/components/db-picker';
+import { Studio } from '@/components/studio';
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
-import { Spinner } from "@/components/ui/spinner";
-import { ApiError, queries, sessionLost } from "@/lib/api";
+} from '@/components/ui/empty';
+import { Spinner } from '@/components/ui/spinner';
+import { ApiError, queries, sessionLost } from '@/lib/api';
 
 export function App() {
   const meta = useQuery(queries.meta());
@@ -48,7 +49,7 @@ export function App() {
       />
     );
   }
-  if (meta.data.state === "needs-db") return <DbPicker meta={meta.data} />;
+  if (meta.data.state === 'needs-db') return <DbPicker meta={meta.data} />;
   return <Studio meta={meta.data} />;
 }
 

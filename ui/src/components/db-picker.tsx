@@ -1,12 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { DatabaseIcon } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
-import { api, type Candidate, type Meta, queries } from "@/lib/api";
-import { formatBytes, formatCount, formatRelative } from "@/lib/format";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { DatabaseIcon } from 'lucide-react';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
+import { api, type Candidate, type Meta, queries } from '@/lib/api';
+import { formatBytes, formatCount, formatRelative } from '@/lib/format';
 
 /**
  * needs-db: no local file matched the binding, so the user picks one
@@ -20,7 +21,7 @@ export function DbPicker({ meta }: { meta: Meta }) {
     // The meta query flips to "ready", and App renders the studio.
     onSuccess: () => client.invalidateQueries(),
   });
-  const binding = meta.unmatched?.binding ?? meta.unmatched?.name ?? "DB";
+  const binding = meta.unmatched?.binding ?? meta.unmatched?.name ?? 'DB';
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6">
@@ -75,7 +76,7 @@ function CandidateCard(props: {
   onPick: () => void;
 }) {
   const c = props.candidate;
-  const shortId = c.fileName.replace(/\.sqlite$/, "").slice(0, 12);
+  const shortId = c.fileName.replace(/\.sqlite$/, '').slice(0, 12);
   const unreadable = c.error !== undefined;
   return (
     // The title's button covers the card, so the whole card is one control.
@@ -87,7 +88,7 @@ function CandidateCard(props: {
             disabled={props.disabled || unreadable}
             onClick={props.onPick}
             className="text-left outline-none after:absolute after:inset-0 after:rounded-xl disabled:cursor-not-allowed"
-            aria-label={`Open ${shortId}…, ${c.tables.map((t) => t.name).join(", ") || "no tables"}`}
+            aria-label={`Open ${shortId}…, ${c.tables.map((t) => t.name).join(', ') || 'no tables'}`}
           >
             {shortId}…
           </button>

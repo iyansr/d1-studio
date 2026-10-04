@@ -1,5 +1,5 @@
 // The subset of bun:sqlite we use; avoids pulling in bun-types globals.
-declare module "bun:sqlite" {
+declare module 'bun:sqlite' {
   export class Database {
     constructor(
       filename: string,
